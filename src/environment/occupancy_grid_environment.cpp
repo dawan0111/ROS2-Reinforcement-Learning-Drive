@@ -11,13 +11,25 @@ OccupancyGridEnvironment::OccupancyGridEnvironment(const rclcpp::Node::SharedPtr
   initEnvironment();
 };
 EnvStatus OccupancyGridEnvironment::getStatus(const std::shared_ptr<Actor>& actor) const {
-  std::vector<std::pair<double, double>> scan_data;
-  EnvStatus status{0, scan_data};
+
+  EnvStatus status{0, {}};
 
   if (m_map.data.size() == 0) {
     RCLCPP_WARN(m_node->get_logger(), "map data is empty!");
     return status;
   }
+
+  status.score = 0;
+  status.scan_data = getScanData(actor);
+  status.collision = collisionCheck(actor);
+  status.pose = *actor->getCurrentPose();
+
+  return status;
+}
+
+std::vector<std::pair<double, double>> OccupancyGridEnvironment::getScanData(
+    const std::shared_ptr<Actor>& actor) const {
+  std::vector<std::pair<double, double>> scan_data;
   auto [x, y] = getCellXY(actor->getCurrentPose()->pose);
   double yaw = actor->quatToYaw();
 
@@ -25,12 +37,9 @@ EnvStatus OccupancyGridEnvironment::getStatus(const std::shared_ptr<Actor>& acto
     scan_data.push_back(getRayCast(x, y, yaw, m_max_distance, ray_angle));
   }
 
-  status.score = 0;
-  status.scan_data = std::move(scan_data);
-  status.collision = collisionCheck(actor);
-
-  return status;
+  return scan_data;
 }
+
 void OccupancyGridEnvironment::initEnvironment() {
   auto qos = rclcpp::QoS(10).transient_local();
   m_map_subscribe = m_node->create_subscription<nav_msgs::msg::OccupancyGrid>(

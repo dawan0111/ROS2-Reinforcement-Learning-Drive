@@ -9,10 +9,10 @@ namespace ReinforcementLearningDrive {
 class Environment;
 struct EnvStatus;
 class Actor : public std::enable_shared_from_this<Actor> {
-
  public:
   using Pose = geometry_msgs::msg::PoseWithCovariance;
   using Command = geometry_msgs::msg::Twist;
+
   Actor() {
     m_pose = std::make_shared<Pose>();
     m_actor_status = std::make_shared<EnvStatus>();
@@ -41,15 +41,16 @@ class Actor : public std::enable_shared_from_this<Actor> {
   }
 
   virtual void run(const Command& twist);
-  virtual std::vector<double> getCollisionArea() = 0;
+  std::vector<double> getCollisionArea() { return m_collision_space; };
 
  protected:
-  virtual void m_reset() = 0;
+  virtual void m_reset();
   virtual void m_visualize() = 0;
   void m_updatePose(Pose&& pose) { m_pose->pose = pose.pose; };
 
   std::shared_ptr<Environment> m_env;
   std::shared_ptr<EnvStatus> m_actor_status;
+  std::vector<double> m_collision_space;
   double m_dt{0.01};
 
  private:

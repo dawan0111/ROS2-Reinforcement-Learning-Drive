@@ -3,7 +3,7 @@
 namespace ReinforcementLearningDrive {
 ROS2Actor::ROS2Actor(const rclcpp::Node::SharedPtr& node) : Actor() {
   m_pose_topic_name = "/bicycle_steering_controller/odometry";
-  m_control_topic_name = "/bicycle_steering_controller/control";
+  m_control_topic_name = "/cmd_vel";
   m_pose_service_name = "/bicycle_steering_controller/update";
   m_tf_name = "base_link";
 
@@ -14,6 +14,7 @@ ROS2Actor::ROS2Actor(const rclcpp::Node::SharedPtr& node) : Actor() {
   m_polygon_pub = m_node->create_publisher<geometry_msgs::msg::PolygonStamped>("collision", 10);
 
   if (m_enable_topic) {
+    m_control_pub = node->create_publisher<geometry_msgs::msg::Twist>("cmd_vel", rclcpp::QoS(10));
     m_pose_sub = node->create_subscription<nav_msgs::msg::Odometry>(
         m_pose_topic_name, rclcpp::QoS(10), [this](const nav_msgs::msg::Odometry::SharedPtr msg) {
           auto& position = msg->pose.pose.position;
@@ -22,9 +23,12 @@ ROS2Actor::ROS2Actor(const rclcpp::Node::SharedPtr& node) : Actor() {
         });
   }
 };
-void ROS2Actor::m_reset() {}
+void ROS2Actor::m_reset() {
+  RCLCPP_INFO(m_node->get_logger(), "ROS2 Reset");
+  Actor::m_reset();
+}
 void ROS2Actor::run(const Command& twist) {
-  // RCLCPP_INFO(m_node->get_logger(), "ROS2 Actor Run!!");
+
   // m_predictPose();
   Actor::run(twist);
 }
@@ -39,17 +43,19 @@ void ROS2Actor::m_tfPublish() {
   geometry_msgs::msg::TransformStamped transform_stamped;
 
   const auto& pose = getCurrentPose();
+  // RCLCPP_INFO(m_node->get_logger(), "x: %f", pose->pose.position.x);
+  // RCLCPP_INFO(m_node->get_logger(), "y: %f", pose->pose.position.y);
+  // RCLCPP_INFO(m_node->get_logger(), "z: %f", pose->pose.position.z);
 
   transform_stamped.header.stamp = m_node->get_clock()->now();
   transform_stamped.header.frame_id = "map";
   transform_stamped.child_frame_id = m_tf_name;
   transform_stamped.transform.translation.x = pose->pose.position.x;
   transform_stamped.transform.translation.y = pose->pose.position.y;
-  transform_stamped.transform.translation.z = pose->pose.position.z;
+  transform_stamped.transform.translation.z = pose->pose.position.z + 0.05;
 
   transform_stamped.transform.rotation = pose->pose.orientation;
 
-  // 변환 퍼블리시
   m_tf_broadcaster->sendTransform(transform_stamped);
 }
 
@@ -66,7 +72,7 @@ void ROS2Actor::m_markerVisualize() {
   score_marker.pose.position.x = 0.0;
   score_marker.pose.position.y = 0.0;
   score_marker.pose.position.z = 2.0;
-  score_marker.scale.z = 0.5;
+  score_marker.scale.z = 0.25;
   score_marker.color.a = 1.0;
   score_marker.color.r = 1.0;
   score_marker.color.g = 1.0;

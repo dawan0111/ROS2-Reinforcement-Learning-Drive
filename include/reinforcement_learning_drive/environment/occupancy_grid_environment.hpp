@@ -21,6 +21,7 @@ class OccupancyGridEnvironment : public ROS2Environment {
   double m_max_distance;
   std::vector<double> m_ray_angles;
 
+  std::vector<std::pair<double, double>> getScanData(const std::shared_ptr<Actor>& actor) const;
   std::pair<int16_t, int16_t> getCellXY(const geometry_msgs::msg::Pose& pose) const;
   std::pair<double, double> getRayCast(int16_t start_x, int16_t start_y, double start_yaw, double max_distance,
                                        double ray_angle) const;

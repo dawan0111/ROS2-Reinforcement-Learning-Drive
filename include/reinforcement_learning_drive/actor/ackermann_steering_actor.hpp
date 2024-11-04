@@ -10,7 +10,6 @@ class AckermannSteeringActor : public ROS2Actor {
   using Ptr = std::shared_ptr<AckermannSteeringActor>;
 
   AckermannSteeringActor(const rclcpp::Node::SharedPtr& node);
-  std::vector<double> getCollisionArea() override;
 
  private:
   void m_reset() override;
@@ -18,7 +17,6 @@ class AckermannSteeringActor : public ROS2Actor {
 
   double m_steering_angle;
   double m_wheel_base;
-  std::vector<double> m_collision_space;
 };
 
 }  // namespace ReinforcementLearningDrive

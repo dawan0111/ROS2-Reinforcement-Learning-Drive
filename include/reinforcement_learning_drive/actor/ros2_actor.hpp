@@ -35,9 +35,10 @@ class ROS2Actor : public Actor {
   std::string m_pose_service_name;
   std::string m_tf_name;
 
-  bool m_enable_topic{false};
+  bool m_enable_topic{true};
 
-  rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr m_pose_sub;
+  rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr m_pose_sub{nullptr};
+  rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr m_control_pub{nullptr};
   rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr m_marker_pub;
   rclcpp::Publisher<geometry_msgs::msg::PolygonStamped>::SharedPtr m_polygon_pub;
 

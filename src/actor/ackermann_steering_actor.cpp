@@ -14,10 +14,6 @@ void AckermannSteeringActor::m_reset() {
   ROS2Actor::m_reset();
 }
 
-std::vector<double> AckermannSteeringActor::getCollisionArea() {
-  return m_collision_space;
-}
-
 void AckermannSteeringActor::m_predictPose(const Command& twist, double dt) {
   const auto& pose = getCurrentPose();
   double wheelbase = m_wheel_base;

@@ -8,6 +8,7 @@ class Actor;
 struct EnvStatus {
   int32_t score;
   std::vector<std::pair<double, double>> scan_data;
+  geometry_msgs::msg::PoseWithCovariance pose;
   bool collision;
   EnvStatus() : score(0), scan_data({}), collision(false){};
   EnvStatus(int32_t score_, std::vector<std::pair<double, double>> scan_data_)
