@@ -8,26 +8,31 @@ PathTrackingReward::PathTrackingReward(const rclcpp::Node::SharedPtr& node, bool
       "/planned_path", 10, [this](const nav_msgs::msg::Path::SharedPtr msg) {
         m_path = *msg;
         m_current_index = 0;
+        m_is_initialized = true;
         RCLCPP_INFO(m_node->get_logger(), "Path received with %ld points", m_path.poses.size());
       });
 }
 
-double PathTrackingReward::calculateReward() {
+bool PathTrackingReward::calculateReward(const std::shared_ptr<Actor>& actor) {
   if (m_path.poses.empty()) {
-    RCLCPP_WARN(m_node->get_logger(), "No path data available.");
-    return 0.0;
+    return false;
   }
+
+  const auto& actor_pose = actor->getCurrentPose();
   const auto& target_pose = m_path.poses[m_current_index].pose.position;
-  double current_x = 0.0;  // 실제 로봇의 위치 데이터를 받아야 함
-  double current_y = 0.0;  // 실제 로봇의 위치 데이터를 받아야 함
+
+  double current_x = actor_pose->pose.position.x;
+  double current_y = actor_pose->pose.position.y;
 
   double distance_to_target = std::hypot(target_pose.x - current_x, target_pose.y - current_y);
+  double goal_direction = std::atan2(target_pose.y - current_y, target_pose.x - current_x);
+  double current_yaw = actor->quatToYaw();
 
-  // 간단한 보상 함수 예시: 목표에 가까울수록 높은 보상
-  double reward = 1.0 / (1.0 + distance_to_target);
+  double reward = 1.0 / (1.001 + distance_to_target);
 
   if (distance_to_target < 0.1) {
     m_current_index++;
+    m_score++;
     if (m_current_index >= static_cast<int>(m_path.poses.size())) {
       if (m_loop) {
         m_current_index = 0;
@@ -37,6 +42,10 @@ double PathTrackingReward::calculateReward() {
     }
   }
 
-  return reward;
+  m_goal_distance = distance_to_target;
+  m_goal_angle = goal_direction - current_yaw;
+  m_score = round(m_score) + reward;
+
+  return true;
 }
 }  // namespace ReinforcementLearningDrive

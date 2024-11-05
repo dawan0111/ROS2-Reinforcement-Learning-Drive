@@ -9,7 +9,6 @@ class ROS2Reward : public Reward {
  public:
   using Ptr = std::shared_ptr<ROS2Reward>;
   ROS2Reward(const rclcpp::Node::SharedPtr& node) : Reward(), m_node(node){};
-  virtual double calculateReward() = 0;
 
  protected:
   rclcpp::Node::SharedPtr m_node;

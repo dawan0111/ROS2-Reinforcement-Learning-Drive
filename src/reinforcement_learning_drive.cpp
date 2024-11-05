@@ -7,7 +7,16 @@ ReinforcementLearningDrive::ReinforcementLearningDrive(const rclcpp::NodeOptions
 void ReinforcementLearningDrive::initialize() {
   m_actor = std::make_shared<AckermannSteeringActor>(shared_from_this());
   m_environment = std::make_shared<OccupancyGridEnvironment>(shared_from_this());
+  m_reward = std::make_shared<PathTrackingReward>(shared_from_this(), true);
 
+  /**
+   * Configure Environment
+   */
+  m_environment->setReward(m_reward);
+
+  /**
+   * Configure Actor
+   */
   m_actor->setEnvironment(m_environment);
 
   m_cmd_vel_sub = this->create_subscription<geometry_msgs::msg::Twist>(

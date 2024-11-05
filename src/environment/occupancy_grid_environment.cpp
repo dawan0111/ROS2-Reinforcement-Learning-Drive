@@ -1,4 +1,6 @@
 #include "reinforcement_learning_drive/environment/occupancy_grid_environment.hpp"
+#include "reinforcement_learning_drive/actor/actor.hpp"
+#include "reinforcement_learning_drive/reward/reward.hpp"
 
 namespace ReinforcementLearningDrive {
 OccupancyGridEnvironment::OccupancyGridEnvironment(const rclcpp::Node::SharedPtr& node) : ROS2Environment(node) {
@@ -11,15 +13,17 @@ OccupancyGridEnvironment::OccupancyGridEnvironment(const rclcpp::Node::SharedPtr
   initEnvironment();
 };
 EnvStatus OccupancyGridEnvironment::getStatus(const std::shared_ptr<Actor>& actor) const {
-
   EnvStatus status{0, {}};
 
   if (m_map.data.size() == 0) {
     RCLCPP_WARN(m_node->get_logger(), "map data is empty!");
     return status;
   }
+  m_reward->calculateReward(actor);
 
-  status.score = 0;
+  status.score = m_reward->getScore();
+  status.goal_angle = m_reward->getDistanceToAngle();
+  status.goal_distance = m_reward->getDistanceToGoal();
   status.scan_data = getScanData(actor);
   status.collision = collisionCheck(actor);
   status.pose = *actor->getCurrentPose();
