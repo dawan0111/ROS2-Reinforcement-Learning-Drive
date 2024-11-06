@@ -8,6 +8,7 @@ void Actor::run(const Command& twist) {
   if (m_actor_status->collision) {
     m_reset();
   }
+
   m_visualize();
 };
 

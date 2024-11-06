@@ -28,9 +28,14 @@ void ROS2Actor::m_reset() {
   Actor::m_reset();
 }
 void ROS2Actor::run(const Command& twist) {
-
-  // m_predictPose();
+  if (m_enable_topic) {
+    m_control_pub->publish(twist);
+  }
   Actor::run(twist);
+
+  // RCLCPP_INFO(m_node->get_logger(), "Score: %f", m_actor_status->score);
+  // RCLCPP_INFO(m_node->get_logger(), "Distance: %f", m_actor_status->goal_distance);
+  // RCLCPP_INFO(m_node->get_logger(), "Angle: %f", m_actor_status->goal_angle);
 }
 
 void ROS2Actor::m_visualize() {
@@ -71,7 +76,7 @@ void ROS2Actor::m_markerVisualize() {
   score_marker.action = visualization_msgs::msg::Marker::ADD;
   score_marker.pose.position.x = 0.0;
   score_marker.pose.position.y = 0.0;
-  score_marker.pose.position.z = 2.0;
+  score_marker.pose.position.z = 1.0;
   score_marker.scale.z = 0.25;
   score_marker.color.a = 1.0;
   score_marker.color.r = 1.0;
@@ -96,7 +101,7 @@ void ROS2Actor::m_markerVisualize() {
     start_point.z = 0.0;
 
     geometry_msgs::msg::Point end_point;
-    double actual_distance = std::isinf(distance) ? 10.0 : distance;
+    double actual_distance = std::isinf(distance) ? 10.0 : distance * 10.0;
     end_point.x = actual_distance * std::cos(angle);
     end_point.y = actual_distance * std::sin(angle);
     end_point.z = 0.0;

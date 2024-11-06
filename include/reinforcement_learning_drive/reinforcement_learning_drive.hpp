@@ -3,18 +3,27 @@
 
 #include <memory>
 #include <rclcpp/rclcpp.hpp>
+#include <rclcpp_action/rclcpp_action.hpp>
+#include <thread>
 #include "geometry_msgs/msg/twist.hpp"
 #include "reinforcement_learning_drive/actor/ackermann_steering_actor.hpp"
 #include "reinforcement_learning_drive/environment/occupancy_grid_environment.hpp"
 #include "reinforcement_learning_drive/reward/path_tracking_reward.hpp"
+#include "reinforcement_learning_drive_interface/action/drive.hpp"
 
 namespace ReinforcementLearningDrive {
 class ReinforcementLearningDrive : public rclcpp::Node {
  public:
+  using Drive = reinforcement_learning_drive_interface::action::Drive;
+  using GoalHandleDrive = rclcpp_action::ServerGoalHandle<Drive>;
+
   explicit ReinforcementLearningDrive(const rclcpp::NodeOptions&);
   void initialize();
 
  private:
+  void executeAction(const std::shared_ptr<GoalHandleDrive> goal_handle);
+  rclcpp_action::Server<Drive>::SharedPtr m_drive_action_server;
+
   std::shared_ptr<Actor> m_actor;
   std::shared_ptr<Environment> m_environment;
   std::shared_ptr<Reward> m_reward;

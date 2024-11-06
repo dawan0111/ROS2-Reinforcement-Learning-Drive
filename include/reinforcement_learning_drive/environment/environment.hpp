@@ -5,7 +5,7 @@ namespace ReinforcementLearningDrive {
 class Actor;
 class Reward;
 struct EnvStatus {
-  int32_t score;
+  double score;
   std::vector<std::pair<double, double>> scan_data;
   geometry_msgs::msg::PoseWithCovariance pose;
   bool collision;

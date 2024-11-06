@@ -16,6 +16,7 @@ find_package(visualization_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(tf2 REQUIRED)
 find_package(tf2_ros REQUIRED)
+find_package(reinforcement_learning_drive_interface REQUIRED)
 # uncomment the following section in order to fill in
 # further dependencies manually.
 # find_package(<dependency> REQUIRED)
@@ -37,6 +38,7 @@ ament_target_dependencies(${library_name}
   visualization_msgs
   tf2
   tf2_ros
+  reinforcement_learning_drive_interface
 )
 
 include_directories(

@@ -19,6 +19,7 @@ class Actor : public std::enable_shared_from_this<Actor> {
   };
 
   std::shared_ptr<Pose> getCurrentPose() const { return m_pose; };
+  const std::shared_ptr<EnvStatus> getActorStatus() const { return m_actor_status; };
   std::shared_ptr<Environment> getEnvironment() const { return m_env; }
   void setEnvironment(std::shared_ptr<Environment> env) { m_env = env; }
 

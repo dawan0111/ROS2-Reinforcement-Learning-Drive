@@ -19,13 +19,20 @@ EnvStatus OccupancyGridEnvironment::getStatus(const std::shared_ptr<Actor>& acto
     RCLCPP_WARN(m_node->get_logger(), "map data is empty!");
     return status;
   }
-  m_reward->calculateReward(actor);
+
+  bool collision = collisionCheck(actor);
+
+  if (collision) {
+    m_reward->reset();
+  } else {
+    m_reward->calculateReward(actor);
+  }
 
   status.score = m_reward->getScore();
   status.goal_angle = m_reward->getDistanceToAngle();
   status.goal_distance = m_reward->getDistanceToGoal();
   status.scan_data = getScanData(actor);
-  status.collision = collisionCheck(actor);
+  status.collision = collision;
   status.pose = *actor->getCurrentPose();
 
   return status;
@@ -121,7 +128,7 @@ std::pair<double, double> OccupancyGridEnvironment::getRayCast(int16_t start_x, 
     int index = y * width + x;
 
     if (m_map.data[index] > 50) {
-      return {distance, ray_angle};
+      return {distance / max_distance, ray_angle};
     }
   }
 

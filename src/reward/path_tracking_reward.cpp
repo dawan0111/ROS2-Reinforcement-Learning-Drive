@@ -4,13 +4,20 @@ namespace ReinforcementLearningDrive {
 PathTrackingReward::PathTrackingReward(const rclcpp::Node::SharedPtr& node, bool loop)
     : ROS2Reward(node), m_loop(loop), m_current_index(0) {
   // Path 토픽 구독 설정
-  m_path_sub = m_node->create_subscription<nav_msgs::msg::Path>(
-      "/planned_path", 10, [this](const nav_msgs::msg::Path::SharedPtr msg) {
+  m_path_sub =
+      m_node->create_subscription<nav_msgs::msg::Path>("/path", 10, [this](const nav_msgs::msg::Path::SharedPtr msg) {
         m_path = *msg;
-        m_current_index = 0;
         m_is_initialized = true;
-        RCLCPP_INFO(m_node->get_logger(), "Path received with %ld points", m_path.poses.size());
+        // m_current_index = 0;
+        // RCLCPP_INFO(m_node->get_logger(), "Path received with %ld points", m_path.poses.size());
       });
+}
+
+void PathTrackingReward::reset() {
+  m_goal_distance = 0.0;
+  m_goal_angle = 0.0;
+  m_score = 0.0;
+  m_current_index = 0;
 }
 
 bool PathTrackingReward::calculateReward(const std::shared_ptr<Actor>& actor) {
@@ -30,7 +37,7 @@ bool PathTrackingReward::calculateReward(const std::shared_ptr<Actor>& actor) {
 
   double reward = 1.0 / (1.001 + distance_to_target);
 
-  if (distance_to_target < 0.1) {
+  if (distance_to_target < 0.3) {
     m_current_index++;
     m_score++;
     if (m_current_index >= static_cast<int>(m_path.poses.size())) {
@@ -44,7 +51,7 @@ bool PathTrackingReward::calculateReward(const std::shared_ptr<Actor>& actor) {
 
   m_goal_distance = distance_to_target;
   m_goal_angle = goal_direction - current_yaw;
-  m_score = round(m_score) + reward;
+  m_score = floor(m_score) + reward;
 
   return true;
 }

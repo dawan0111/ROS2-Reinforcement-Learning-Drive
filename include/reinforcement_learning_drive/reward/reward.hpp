@@ -12,6 +12,7 @@ class Reward {
   double getDistanceToGoal() { return m_goal_distance; };
   double getDistanceToAngle() { return m_goal_angle; };
   double getScore() { return m_score; };
+  virtual void reset() = 0;
 
  protected:
   bool m_is_initialized{false};
