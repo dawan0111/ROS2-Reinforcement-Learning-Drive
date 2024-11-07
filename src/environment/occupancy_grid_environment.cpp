@@ -86,7 +86,6 @@ bool OccupancyGridEnvironment::collisionCheck(const std::shared_ptr<Actor>& acto
       int index = map_y * m_map.info.width + map_x;
 
       if (m_map.data[index] > 50) {
-        RCLCPP_INFO(m_node->get_logger(), "Collision");
         return true;
       }
     }

@@ -9,9 +9,14 @@ class Reward {
  public:
   Reward() = default;
   virtual bool calculateReward(const std::shared_ptr<Actor>& actor) = 0;
+  double getScore() { return m_score; };
+
+  /**
+   * TODO: Custom Data로 변경
+   */
   double getDistanceToGoal() { return m_goal_distance; };
   double getDistanceToAngle() { return m_goal_angle; };
-  double getScore() { return m_score; };
+
   virtual void reset() = 0;
 
  protected:

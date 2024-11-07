@@ -3,14 +3,17 @@
 namespace ReinforcementLearningDrive {
 void Actor::run(const Command& twist) {
   m_predictPose(twist, m_dt);
+  std::this_thread::sleep_for(std::chrono::duration<double>(m_dt));
   *m_actor_status = m_env->getStatus(shared_from_this());
 
   if (m_actor_status->collision) {
     m_reset();
   }
-
-  m_visualize();
 };
+
+void Actor::debug() {
+  m_visualize();
+}
 
 void Actor::m_reset() {
   Pose pose;

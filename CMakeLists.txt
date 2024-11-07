@@ -28,6 +28,7 @@ add_library(${library_name}
   src/actor/ackermann_steering_actor.cpp
   src/environment/occupancy_grid_environment.cpp
   src/reward/path_tracking_reward.cpp
+  src/reward/scan_reward.cpp
 )
 
 ament_target_dependencies(${library_name}

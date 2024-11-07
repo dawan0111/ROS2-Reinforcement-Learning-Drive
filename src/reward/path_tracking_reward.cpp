@@ -27,6 +27,7 @@ bool PathTrackingReward::calculateReward(const std::shared_ptr<Actor>& actor) {
 
   const auto& actor_pose = actor->getCurrentPose();
   const auto& target_pose = m_path.poses[m_current_index].pose.position;
+  double completed_reward = 0.0;
 
   double current_x = actor_pose->pose.position.x;
   double current_y = actor_pose->pose.position.y;
@@ -34,12 +35,14 @@ bool PathTrackingReward::calculateReward(const std::shared_ptr<Actor>& actor) {
   double distance_to_target = std::hypot(target_pose.x - current_x, target_pose.y - current_y);
   double goal_direction = std::atan2(target_pose.y - current_y, target_pose.x - current_x);
   double current_yaw = actor->quatToYaw();
+  double goal_angle = goal_direction - current_yaw;
 
-  double reward = 1.0 / (1.001 + distance_to_target);
+  double distance_reward = 1.0 / (1.001 + distance_to_target);
+  // double angle_reward = 0.5 / (1.001 + std::abs(goal_angle));
 
   if (distance_to_target < 0.3) {
     m_current_index++;
-    m_score++;
+    completed_reward = 20.0;
     if (m_current_index >= static_cast<int>(m_path.poses.size())) {
       if (m_loop) {
         m_current_index = 0;
@@ -49,9 +52,9 @@ bool PathTrackingReward::calculateReward(const std::shared_ptr<Actor>& actor) {
     }
   }
 
-  m_goal_distance = distance_to_target;
-  m_goal_angle = goal_direction - current_yaw;
-  m_score = floor(m_score) + reward;
+  m_goal_distance = distance_to_target + completed_reward;
+  m_goal_angle = goal_angle;
+  m_score = distance_reward;
 
   return true;
 }

@@ -24,7 +24,6 @@ ROS2Actor::ROS2Actor(const rclcpp::Node::SharedPtr& node) : Actor() {
   }
 };
 void ROS2Actor::m_reset() {
-  RCLCPP_INFO(m_node->get_logger(), "ROS2 Reset");
   Actor::m_reset();
 }
 void ROS2Actor::run(const Command& twist) {

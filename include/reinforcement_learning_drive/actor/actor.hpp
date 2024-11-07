@@ -1,6 +1,8 @@
 #ifndef __ACTOR_H__
 #define __ACTOR_H__
+#include <chrono>
 #include <cmath>
+#include <thread>
 #include "geometry_msgs/msg/pose_with_covariance.hpp"
 #include "geometry_msgs/msg/twist.hpp"
 #include "reinforcement_learning_drive/environment/environment.hpp"
@@ -42,6 +44,7 @@ class Actor : public std::enable_shared_from_this<Actor> {
   }
 
   virtual void run(const Command& twist);
+  void debug();
   std::vector<double> getCollisionArea() { return m_collision_space; };
 
  protected:
@@ -52,7 +55,7 @@ class Actor : public std::enable_shared_from_this<Actor> {
   std::shared_ptr<Environment> m_env;
   std::shared_ptr<EnvStatus> m_actor_status;
   std::vector<double> m_collision_space;
-  double m_dt{0.01};
+  double m_dt{0.033};
 
  private:
   std::shared_ptr<Pose> m_pose;
