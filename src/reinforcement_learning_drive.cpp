@@ -5,9 +5,11 @@ ReinforcementLearningDrive::ReinforcementLearningDrive(const rclcpp::NodeOptions
     : Node("reinforcement_learning_drive", options) {}
 
 void ReinforcementLearningDrive::initialize() {
-  m_actor = std::make_shared<AckermannSteeringActor>(shared_from_this());
+  auto actor = std::make_shared<AckermannSteeringActor>(shared_from_this());
   m_environment = std::make_shared<OccupancyGridEnvironment>(shared_from_this());
   m_reward = std::make_shared<ScanReward>(shared_from_this());
+
+  m_actors.push_back(std::move(actor));
 
   /**
    * Configure Environment
@@ -17,8 +19,11 @@ void ReinforcementLearningDrive::initialize() {
   /**
    * Configure Actor
    */
-  m_actor->setEnvironment(m_environment);
-  m_actor->run(m_current_twist);
+
+  for (auto& actor : m_actors) {
+    actor->setEnvironment(m_environment);
+    actor->run(m_current_twist);
+  }
 
   // m_cmd_vel_sub = this->create_subscription<geometry_msgs::msg::Twist>(
   //     "cmd_vel", 10, [this](const geometry_msgs::msg::Twist::SharedPtr msg) -> void { m_current_twist = *msg; });
@@ -26,7 +31,12 @@ void ReinforcementLearningDrive::initialize() {
   timer_cb_group_ = nullptr;
 
   m_timer = this->create_wall_timer(
-      std::chrono::milliseconds(33), [this]() -> void { m_actor->debug(); }, timer_cb_group_);
+      std::chrono::milliseconds(33),
+      [this]() -> void {
+        std::for_each(std::execution::par, m_actors.begin(), m_actors.end(),
+                      [](std::shared_ptr<Actor>& actor) { actor->debug(); });
+      },
+      timer_cb_group_);
 
   m_drive_service_server = this->create_service<Drive>(
       "drive_service",
@@ -36,34 +46,56 @@ void ReinforcementLearningDrive::initialize() {
 
 void ReinforcementLearningDrive::executeService(const std::shared_ptr<Drive::Request> request,
                                                 std::shared_ptr<Drive::Response> response) {
-  // 서비스 실행 시작 시간 기록
   auto start_time = std::chrono::steady_clock::now();
 
-  // 서비스 요청을 통해 받은 속도 명령으로 처리
   m_current_twist = request->target_velocity;
-  m_actor->run(m_current_twist);
+  m_actors[0]->run(m_current_twist);
+
+  response->state = getActorStatus(m_actors[0]);
+
+  auto end_time = std::chrono::steady_clock::now();
+  auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time).count();
+
+  // 실행 시간 로그 출력
+  RCLCPP_INFO(this->get_logger(), "Service executed in %f ms", duration / 1000.0);
+}
+
+void ReinforcementLearningDrive::executeMultiService(const std::shared_ptr<MultiDrive::Request> request,
+                                                     std::shared_ptr<MultiDrive::Response> response) {
+  auto start_time = std::chrono::steady_clock::now();
+  int16_t index = 0;
+  std::for_each(std::execution::par, m_actors.begin(), m_actors.end(),
+                [this, &request, &response, &index](std::shared_ptr<Actor>& actor) {
+                  auto twist = request->target_velocity[index];
+                  actor->run(twist);
+                  ++index;
+                  response->state.push_back(getActorStatus(m_actor));
+                });
+
+  auto end_time = std::chrono::steady_clock::now();
+  auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time).count();
+
+  // 실행 시간 로그 출력
+  RCLCPP_INFO(this->get_logger(), "Service executed in %f ms", duration / 1000.0);
+}
+
+ReinforcementLearningDrive::State ReinforcementLearningDrive::getActorStatus(std::shared_ptr<Actor>& actor) {
+  State state;
   const auto& actor_status = m_actor->getActorStatus();
 
-  // 스캔 데이터를 평면화하여 응답에 저장
   std::vector<double> flat_scan_data;
   flat_scan_data.reserve(actor_status->scan_data.size());
   for (const auto& [distance, angle] : actor_status->scan_data) {
     flat_scan_data.push_back(std::isinf(distance) ? 1.0 : distance);
   }
 
-  // 응답 데이터 설정
-  response->state.scan_data = flat_scan_data;
-  response->state.pose = actor_status->pose.pose;
-  response->state.score = actor_status->score;
-  response->state.done = actor_status->collision;
-  response->state.goal_distance = actor_status->goal_distance;
-  response->state.goal_angle = actor_status->goal_angle;
+  state.scan_data = flat_scan_data;
+  state.pose = actor_status->pose.pose;
+  state.score = actor_status->score;
+  state.done = actor_status->collision;
+  state.goal_distance = actor_status->goal_distance;
+  state.goal_angle = actor_status->goal_angle;
 
-  // 서비스 실행 종료 시간 기록
-  auto end_time = std::chrono::steady_clock::now();
-  auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time).count();
-
-  // 실행 시간 로그 출력
-  RCLCPP_INFO(this->get_logger(), "Service executed in %f ms", duration / 1000.0);
+  return state;
 }
 }  // namespace ReinforcementLearningDrive
