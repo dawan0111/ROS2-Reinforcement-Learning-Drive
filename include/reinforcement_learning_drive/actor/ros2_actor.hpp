@@ -22,6 +22,7 @@ class ROS2Actor : public Actor {
 
  protected:
   rclcpp::Node::SharedPtr m_node;
+  rclcpp::CallbackGroup::SharedPtr m_actor_cb_group;
   void m_visualize() override;
   void m_reset() override;
 

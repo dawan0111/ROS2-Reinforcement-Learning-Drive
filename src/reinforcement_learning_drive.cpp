@@ -69,7 +69,7 @@ void ReinforcementLearningDrive::executeMultiService(const std::shared_ptr<Multi
                   auto twist = request->target_velocity[index];
                   actor->run(twist);
                   ++index;
-                  response->state.push_back(getActorStatus(m_actor));
+                  response->state.push_back(getActorStatus(actor));
                 });
 
   auto end_time = std::chrono::steady_clock::now();
@@ -81,7 +81,7 @@ void ReinforcementLearningDrive::executeMultiService(const std::shared_ptr<Multi
 
 ReinforcementLearningDrive::State ReinforcementLearningDrive::getActorStatus(std::shared_ptr<Actor>& actor) {
   State state;
-  const auto& actor_status = m_actor->getActorStatus();
+  const auto& actor_status = actor->getActorStatus();
 
   std::vector<double> flat_scan_data;
   flat_scan_data.reserve(actor_status->scan_data.size());

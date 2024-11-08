@@ -10,17 +10,28 @@ ROS2Actor::ROS2Actor(const rclcpp::Node::SharedPtr& node) : Actor() {
   m_node = node;
   m_tf_broadcaster = std::make_shared<tf2_ros::TransformBroadcaster>(m_node);
 
-  m_marker_pub = m_node->create_publisher<visualization_msgs::msg::MarkerArray>("visualization_marker_array", 10);
-  m_polygon_pub = m_node->create_publisher<geometry_msgs::msg::PolygonStamped>("collision", 10);
+  m_actor_cb_group = m_node->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
+
+  rclcpp::SubscriptionOptions sub_options;
+  rclcpp::PublisherOptions pub_options;
+
+  sub_options.callback_group = m_actor_cb_group;
+  pub_options.callback_group = m_actor_cb_group;
+
+  m_marker_pub =
+      m_node->create_publisher<visualization_msgs::msg::MarkerArray>("visualization_marker_array", 10, pub_options);
+  m_polygon_pub = m_node->create_publisher<geometry_msgs::msg::PolygonStamped>("collision", 10, pub_options);
 
   if (m_enable_topic) {
-    m_control_pub = node->create_publisher<geometry_msgs::msg::Twist>("cmd_vel", rclcpp::QoS(10));
+    m_control_pub = node->create_publisher<geometry_msgs::msg::Twist>("cmd_vel", rclcpp::QoS(10), pub_options);
     m_pose_sub = node->create_subscription<nav_msgs::msg::Odometry>(
-        m_pose_topic_name, rclcpp::QoS(10), [this](const nav_msgs::msg::Odometry::SharedPtr msg) {
+        m_pose_topic_name, rclcpp::QoS(10),
+        [this](const nav_msgs::msg::Odometry::SharedPtr msg) {
           auto& position = msg->pose.pose.position;
           auto& orientation = msg->pose.pose.orientation;
           m_updatePose(std::move(msg->pose));
-        });
+        },
+        sub_options);
   }
 };
 void ROS2Actor::m_reset() {
