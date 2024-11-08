@@ -32,15 +32,6 @@ void ReinforcementLearningDrive::initialize() {
       "drive_service",
       std::bind(&ReinforcementLearningDrive::executeService, this, std::placeholders::_1, std::placeholders::_2),
       rmw_qos_profile_services_default, client_cb_group_);
-
-  // m_drive_action_server = rclcpp_action::create_server<Drive>(
-  //     this, "drive_action",
-  //     [](const rclcpp_action::GoalUUID&, std::shared_ptr<const Drive::Goal> goal) {
-  //       return rclcpp_action::GoalResponse::ACCEPT_AND_EXECUTE;
-  //     },
-  //     [](const std::shared_ptr<GoalHandleDrive>) { return rclcpp_action::CancelResponse::ACCEPT; },
-  //     std::bind(&ReinforcementLearningDrive::executeAction, this, std::placeholders::_1),
-  //     rcl_action_server_get_default_options(), client_cb_group_);
 }
 
 void ReinforcementLearningDrive::executeService(const std::shared_ptr<Drive::Request> request,
@@ -61,12 +52,12 @@ void ReinforcementLearningDrive::executeService(const std::shared_ptr<Drive::Req
   }
 
   // 응답 데이터 설정
-  response->scan_data = flat_scan_data;
-  response->pose = actor_status->pose.pose;
-  response->score = actor_status->score;
-  response->done = actor_status->collision;
-  response->goal_distance = actor_status->goal_distance;
-  response->goal_angle = actor_status->goal_angle;
+  response->state.scan_data = flat_scan_data;
+  response->state.pose = actor_status->pose.pose;
+  response->state.score = actor_status->score;
+  response->state.done = actor_status->collision;
+  response->state.goal_distance = actor_status->goal_distance;
+  response->state.goal_angle = actor_status->goal_angle;
 
   // 서비스 실행 종료 시간 기록
   auto end_time = std::chrono::steady_clock::now();
@@ -75,39 +66,4 @@ void ReinforcementLearningDrive::executeService(const std::shared_ptr<Drive::Req
   // 실행 시간 로그 출력
   RCLCPP_INFO(this->get_logger(), "Service executed in %f ms", duration / 1000.0);
 }
-
-// void ReinforcementLearningDrive::executeAction(const std::shared_ptr<GoalHandleDrive> goal_handle) {
-//   // 실행 시작 시간 기록
-//   auto start_time = std::chrono::steady_clock::now();
-
-//   const auto goal = goal_handle->get_goal();
-//   m_current_twist = goal->target_velocity;
-//   m_actor->run(m_current_twist);
-//   const auto& actor_status = m_actor->getActorStatus();
-//   std::vector<double> flat_scan_data;
-
-//   flat_scan_data.reserve(actor_status->scan_data.size());
-
-//   for (const auto& [distance, angle] : actor_status->scan_data) {
-//     flat_scan_data.push_back(std::isinf(distance) ? 1.0 : distance);
-//   }
-
-//   auto result = std::make_shared<Drive::Result>();
-//   result->scan_data = std::move(flat_scan_data);
-//   result->pose = actor_status->pose.pose;
-//   result->score = actor_status->score;
-//   result->done = actor_status->collision;
-//   result->goal_distance = actor_status->goal_distance;
-//   result->goal_angle = actor_status->goal_angle;
-
-//   goal_handle->succeed(result);
-
-//   // 실행 종료 시간 기록
-//   auto end_time = std::chrono::steady_clock::now();
-//   // 실행 시간 계산 (밀리초 단위)
-//   auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time).count();
-
-//   // 실행 시간 로그 출력
-//   RCLCPP_INFO(this->get_logger(), "Action executed in %f ms", duration / 1000.0);
-// }
 }  // namespace ReinforcementLearningDrive
