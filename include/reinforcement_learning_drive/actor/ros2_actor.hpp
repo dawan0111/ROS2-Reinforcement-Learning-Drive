@@ -16,7 +16,8 @@ class ROS2Actor : public Actor {
 
  public:
   using Ptr = std::shared_ptr<ROS2Actor>;
-  ROS2Actor(const rclcpp::Node::SharedPtr&);
+  ROS2Actor(const rclcpp::Node::SharedPtr&, std::string actor_name);
+  ROS2Actor(const rclcpp::Node::SharedPtr&, std::string actor_name, double control_frequency);
 
   void run(const Command& twist) override;
 
@@ -27,6 +28,7 @@ class ROS2Actor : public Actor {
   void m_reset() override;
 
  private:
+  void initialize();
   void m_collisionVisualize();
   void m_tfPublish();
   void m_markerVisualize();

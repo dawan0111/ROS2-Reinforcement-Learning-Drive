@@ -15,37 +15,23 @@ class Actor : public std::enable_shared_from_this<Actor> {
   using Pose = geometry_msgs::msg::PoseWithCovariance;
   using Command = geometry_msgs::msg::Twist;
 
-  Actor() {
-    m_pose = std::make_shared<Pose>();
-    m_actor_status = std::make_shared<EnvStatus>();
-  };
+  Actor(std::string actor_name, double control_frequency = 30.0);
 
   std::shared_ptr<Pose> getCurrentPose() const { return m_pose; };
   const std::shared_ptr<EnvStatus> getActorStatus() const { return m_actor_status; };
-  std::shared_ptr<Environment> getEnvironment() const { return m_env; }
+
   void setEnvironment(std::shared_ptr<Environment> env) { m_env = env; }
+  std::shared_ptr<Environment> getEnvironment() const { return m_env; }
 
-  double quatToYaw() const {
-    double siny_cosp = 2.0 * (m_pose->pose.orientation.w * m_pose->pose.orientation.z +
-                              m_pose->pose.orientation.x * m_pose->pose.orientation.y);
-    double cosy_cosp = 1.0 - 2.0 * (m_pose->pose.orientation.y * m_pose->pose.orientation.y +
-                                    m_pose->pose.orientation.z * m_pose->pose.orientation.z);
-    return std::atan2(siny_cosp, cosy_cosp);
-  }
-
-  geometry_msgs::msg::Quaternion yawToQuat(double yaw) const {
-    geometry_msgs::msg::Quaternion orientation;
-    orientation.w = std::cos(yaw * 0.5);
-    orientation.x = 0.0;
-    orientation.y = 0.0;
-    orientation.z = std::sin(yaw * 0.5);
-
-    return orientation;
-  }
-
-  virtual void run(const Command& twist);
-  void debug();
   std::vector<double> getCollisionArea() { return m_collision_space; };
+  std::string getName() { return m_name; }
+
+  void debug();
+  virtual void run(const Command& twist);
+
+  double quatToYaw() const;
+
+  geometry_msgs::msg::Quaternion yawToQuat(double yaw) const;
 
  protected:
   virtual void m_reset();
@@ -55,6 +41,8 @@ class Actor : public std::enable_shared_from_this<Actor> {
   std::shared_ptr<Environment> m_env;
   std::shared_ptr<EnvStatus> m_actor_status;
   std::vector<double> m_collision_space;
+
+  std::string m_name;
   double m_dt{0.033};
 
  private:

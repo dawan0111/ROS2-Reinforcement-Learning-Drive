@@ -1,6 +1,7 @@
 #ifndef __REINFORCEMENT_LEARNING_DRIVE_H__
 #define __REINFORCEMENT_LEARNING_DRIVE_H__
 
+#include <tbb/concurrent_vector.h>
 #include <execution>
 #include <memory>
 #include <rclcpp/rclcpp.hpp>

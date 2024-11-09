@@ -3,9 +3,19 @@
 
 namespace ReinforcementLearningDrive {
 
-AckermannSteeringActor::AckermannSteeringActor(const rclcpp::Node::SharedPtr& node)
-    : ROS2Actor(node), m_steering_angle(0.0), m_wheel_base(0.4) {
-  // 추가 초기화가 필요하면 여기에 작성
+AckermannSteeringActor::AckermannSteeringActor(const rclcpp::Node::SharedPtr& node, std::string actor_name)
+    : ROS2Actor(node, actor_name) {
+  m_initialize();
+}
+AckermannSteeringActor::AckermannSteeringActor(const rclcpp::Node::SharedPtr& node, std::string actor_name,
+                                               double frequency)
+    : ROS2Actor(node, actor_name, frequency) {
+  m_initialize();
+}
+
+void AckermannSteeringActor::m_initialize() {
+  m_steering_angle = 0.0;
+  m_wheel_base = 0.4;
   m_collision_space = {0.225, -0.15, 0.225, 0.15, -0.225, 0.15, -0.225, -0.15};
 }
 

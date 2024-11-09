@@ -5,6 +5,8 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
 endif()
 
+add_compile_options(-DTBB_ENABLE_IPO=OFF)
+
 # find dependencies
 set(library_name rld_lib)
 # find dependencies
@@ -16,6 +18,7 @@ find_package(visualization_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(tf2 REQUIRED)
 find_package(tf2_ros REQUIRED)
+find_package(TBB REQUIRED)
 find_package(reinforcement_learning_drive_interface REQUIRED)
 # uncomment the following section in order to fill in
 # further dependencies manually.
@@ -40,6 +43,10 @@ ament_target_dependencies(${library_name}
   tf2
   tf2_ros
   reinforcement_learning_drive_interface
+)
+
+target_link_libraries(${library_name}
+  TBB::tbb
 )
 
 include_directories(

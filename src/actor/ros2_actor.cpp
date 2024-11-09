@@ -1,15 +1,22 @@
 #include "reinforcement_learning_drive/actor/ros2_actor.hpp"
 
 namespace ReinforcementLearningDrive {
-ROS2Actor::ROS2Actor(const rclcpp::Node::SharedPtr& node) : Actor() {
-  m_pose_topic_name = "/bicycle_steering_controller/odometry";
-  m_control_topic_name = "/cmd_vel";
-  m_pose_service_name = "/bicycle_steering_controller/update";
-  m_tf_name = "base_link";
+ROS2Actor::ROS2Actor(const rclcpp::Node::SharedPtr& node, std::string actor_name) : Actor(actor_name), m_node(node) {
+  initialize();
+};
 
-  m_node = node;
+ROS2Actor::ROS2Actor(const rclcpp::Node::SharedPtr& node, std::string actor_name, double control_frequency)
+    : Actor(actor_name, control_frequency), m_node(node) {
+  initialize();
+};
+
+void ROS2Actor::initialize() {
+  m_pose_topic_name = m_name + "/odometry";
+  m_control_topic_name = m_name + "/cmd_vel";
+  m_pose_service_name = m_name + "/update";
+  m_tf_name = m_name;
+
   m_tf_broadcaster = std::make_shared<tf2_ros::TransformBroadcaster>(m_node);
-
   m_actor_cb_group = m_node->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
 
   rclcpp::SubscriptionOptions sub_options;
@@ -18,13 +25,13 @@ ROS2Actor::ROS2Actor(const rclcpp::Node::SharedPtr& node) : Actor() {
   sub_options.callback_group = m_actor_cb_group;
   pub_options.callback_group = m_actor_cb_group;
 
-  m_marker_pub =
-      m_node->create_publisher<visualization_msgs::msg::MarkerArray>("visualization_marker_array", 10, pub_options);
-  m_polygon_pub = m_node->create_publisher<geometry_msgs::msg::PolygonStamped>("collision", 10, pub_options);
+  m_marker_pub = m_node->create_publisher<visualization_msgs::msg::MarkerArray>(m_name + "/visual", 10, pub_options);
+  m_polygon_pub = m_node->create_publisher<geometry_msgs::msg::PolygonStamped>(m_name + "/collision", 10, pub_options);
 
   if (m_enable_topic) {
-    m_control_pub = node->create_publisher<geometry_msgs::msg::Twist>("cmd_vel", rclcpp::QoS(10), pub_options);
-    m_pose_sub = node->create_subscription<nav_msgs::msg::Odometry>(
+    m_control_pub =
+        m_node->create_publisher<geometry_msgs::msg::Twist>(m_name + "/cmd_vel", rclcpp::QoS(10), pub_options);
+    m_pose_sub = m_node->create_subscription<nav_msgs::msg::Odometry>(
         m_pose_topic_name, rclcpp::QoS(10),
         [this](const nav_msgs::msg::Odometry::SharedPtr msg) {
           auto& position = msg->pose.pose.position;
@@ -33,8 +40,13 @@ ROS2Actor::ROS2Actor(const rclcpp::Node::SharedPtr& node) : Actor() {
         },
         sub_options);
   }
-};
+}
+
 void ROS2Actor::m_reset() {
+  if (m_enable_topic) {
+    Command twist;
+    m_control_pub->publish(twist);
+  }
   Actor::m_reset();
 }
 void ROS2Actor::run(const Command& twist) {
@@ -42,10 +54,6 @@ void ROS2Actor::run(const Command& twist) {
     m_control_pub->publish(twist);
   }
   Actor::run(twist);
-
-  // RCLCPP_INFO(m_node->get_logger(), "Score: %f", m_actor_status->score);
-  // RCLCPP_INFO(m_node->get_logger(), "Distance: %f", m_actor_status->goal_distance);
-  // RCLCPP_INFO(m_node->get_logger(), "Angle: %f", m_actor_status->goal_angle);
 }
 
 void ROS2Actor::m_visualize() {
@@ -58,9 +66,6 @@ void ROS2Actor::m_tfPublish() {
   geometry_msgs::msg::TransformStamped transform_stamped;
 
   const auto& pose = getCurrentPose();
-  // RCLCPP_INFO(m_node->get_logger(), "x: %f", pose->pose.position.x);
-  // RCLCPP_INFO(m_node->get_logger(), "y: %f", pose->pose.position.y);
-  // RCLCPP_INFO(m_node->get_logger(), "z: %f", pose->pose.position.z);
 
   transform_stamped.header.stamp = m_node->get_clock()->now();
   transform_stamped.header.frame_id = "map";
