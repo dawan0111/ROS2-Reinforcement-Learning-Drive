@@ -39,7 +39,10 @@ def generate_launch_description():
         package='reinforcement_learning_drive',
         executable='reinforcement_learning_drive_node',
         name='reinforcement_learning_drive_node',
-        parameters=[{'use_sim_time': True}]
+        parameters=[{
+            'use_sim_time': True,
+            'num_actors': 8
+        }]
     )
 
     static_transform_publisher_node = Node(

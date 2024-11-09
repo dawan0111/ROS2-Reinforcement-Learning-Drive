@@ -5,26 +5,34 @@ ReinforcementLearningDrive::ReinforcementLearningDrive(const rclcpp::NodeOptions
     : Node("reinforcement_learning_drive", options) {}
 
 void ReinforcementLearningDrive::initialize() {
-  auto actor = std::make_shared<AckermannSteeringActor>(shared_from_this(), "actor1");
-  auto actor2 = std::make_shared<AckermannSteeringActor>(shared_from_this(), "actor2");
+  this->declare_parameter<std::string>("actor_prefix", "actor");
+  this->declare_parameter<uint16_t>("num_actors", 1);
+  this->declare_parameter<double>("control_frequency", 30.0);
+
+  this->get_parameter("actor_prefix", m_actor_prefix);
+  this->get_parameter("num_actors", m_num_actors);
+  this->get_parameter("control_frequency", m_control_frequency);
+
+  RCLCPP_INFO(this->get_logger(), "========== Parameter ==========");
+  RCLCPP_INFO(this->get_logger(), "num_actors: %d", m_num_actors);
+  RCLCPP_INFO(this->get_logger(), "actor_prefix: %s", m_actor_prefix.c_str());
+  RCLCPP_INFO(this->get_logger(), "control_frequency: %f", m_control_frequency);
+
   m_environment = std::make_shared<OccupancyGridEnvironment>(shared_from_this());
   m_reward = std::make_shared<ScanReward>(shared_from_this());
 
-  m_actors.push_back(std::move(actor));
-  m_actors.push_back(std::move(actor2));
+  for (int i = 0; i < m_num_actors; i++) {
+    auto actor = std::make_shared<AckermannSteeringActor>(shared_from_this(), "actor" + std::to_string(i + 1),
+                                                          m_control_frequency);
+    actor->setEnvironment(m_environment);
+    actor->run(m_current_twist);
+    m_actors.push_back(std::move(actor));
+  }
 
   /**
    * Configure Environment
    */
   m_environment->setReward(m_reward);
-
-  /**
-   * Configure Actor
-   */
-  for (auto& actor : m_actors) {
-    actor->setEnvironment(m_environment);
-    actor->run(m_current_twist);
-  }
 
   // m_cmd_vel_sub = this->create_subscription<geometry_msgs::msg::Twist>(
   //     "cmd_vel", 10, [this](const geometry_msgs::msg::Twist::SharedPtr msg) -> void { m_current_twist = *msg; });
@@ -61,7 +69,6 @@ void ReinforcementLearningDrive::executeService(const std::shared_ptr<Drive::Req
   auto end_time = std::chrono::steady_clock::now();
   auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time).count();
 
-  // 실행 시간 로그 출력
   RCLCPP_INFO(this->get_logger(), "Service executed in %f ms", duration / 1000.0);
 }
 
@@ -69,14 +76,17 @@ void ReinforcementLearningDrive::executeMultiService(const std::shared_ptr<Multi
                                                      std::shared_ptr<MultiDrive::Response> response) {
   auto start_time = std::chrono::steady_clock::now();
   std::atomic<int16_t> index{0};
-  tbb::concurrent_vector<State> vec;
+  tbb::concurrent_vector<State> vec(m_num_actors);
 
-  std::for_each(std::execution::par, m_actors.begin(), m_actors.end(),
-                [this, &request, &vec, &index](std::shared_ptr<Actor>& actor) {
-                  auto twist = request->target_velocity[index.fetch_add(1)];
-                  actor->run(twist);
-                  vec.push_back(getActorStatus(actor));
-                });
+  std::vector<size_t> indices(m_num_actors);
+  std::iota(indices.begin(), indices.end(), 0);
+
+  std::for_each(std::execution::par, indices.begin(), indices.end(), [this, &request, &vec](size_t i) {
+    auto& actor = m_actors[i];
+    auto twist = request->target_velocity[i];
+    actor->run(twist);
+    vec[i] = getActorStatus(actor);
+  });
 
   std::vector<State> states(vec.begin(), vec.end());
   response->state = states;
@@ -84,7 +94,6 @@ void ReinforcementLearningDrive::executeMultiService(const std::shared_ptr<Multi
   auto end_time = std::chrono::steady_clock::now();
   auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time).count();
 
-  // 실행 시간 로그 출력
   RCLCPP_INFO(this->get_logger(), "Service executed in %f ms", duration / 1000.0);
 }
 

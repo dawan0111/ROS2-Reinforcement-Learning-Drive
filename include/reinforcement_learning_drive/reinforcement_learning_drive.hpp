@@ -3,10 +3,12 @@
 
 #include <tbb/concurrent_vector.h>
 #include <execution>
+#include <iterator>
 #include <memory>
 #include <rclcpp/rclcpp.hpp>
 #include <rclcpp_action/rclcpp_action.hpp>
 #include <thread>
+#include <vector>
 #include "geometry_msgs/msg/twist.hpp"
 #include "reinforcement_learning_drive/actor/ackermann_steering_actor.hpp"
 #include "reinforcement_learning_drive/environment/occupancy_grid_environment.hpp"
@@ -44,6 +46,10 @@ class ReinforcementLearningDrive : public rclcpp::Node {
 
   rclcpp::CallbackGroup::SharedPtr client_cb_group_;
   rclcpp::CallbackGroup::SharedPtr timer_cb_group_;
+
+  std::string m_actor_prefix;
+  uint16_t m_num_actors;
+  double m_control_frequency;
 };
 }  // namespace ReinforcementLearningDrive
 
