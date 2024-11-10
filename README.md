@@ -1,4 +1,4 @@
-# Reinforcement_learning_drive
+# ROS2 Reinforcement learning drive
 [![Video Link](https://i.postimg.cc/N09kH4H1/RL-multi-example-2024-11-10-01-05-03-online-video-cutter-com.gif)](https://youtu.be/9CWUMSL1x-A)
 
 # Occupancy Map launch
