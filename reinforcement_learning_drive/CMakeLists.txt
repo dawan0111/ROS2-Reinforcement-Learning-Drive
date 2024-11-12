@@ -16,6 +16,7 @@ find_package(sensor_msgs REQUIRED)
 find_package(nav_msgs REQUIRED)
 find_package(visualization_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
+find_package(gazebo_msgs REQUIRED)
 find_package(tf2 REQUIRED)
 find_package(tf2_ros REQUIRED)
 find_package(TBB REQUIRED)
@@ -30,6 +31,7 @@ add_library(${library_name}
   src/actor/ros2_actor.cpp
   src/actor/ackermann_steering_actor.cpp
   src/environment/occupancy_grid_environment.cpp
+  src/environment/gazebo_environment.cpp
   src/reward/path_tracking_reward.cpp
   src/reward/scan_reward.cpp
 )
@@ -39,6 +41,7 @@ ament_target_dependencies(${library_name}
   sensor_msgs
   nav_msgs
   geometry_msgs
+  gazebo_msgs
   visualization_msgs
   tf2
   tf2_ros

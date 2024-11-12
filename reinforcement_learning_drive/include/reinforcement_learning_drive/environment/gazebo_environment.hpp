@@ -3,6 +3,9 @@
 
 #include <tf2/LinearMath/Matrix3x3.h>
 #include <tf2/LinearMath/Quaternion.h>
+#include <fstream>
+#include <sstream>
+#include "gazebo_msgs/srv/spawn_entity.hpp"
 #include "geometry_msgs/msg/pose.hpp"
 #include "nav_msgs/msg/occupancy_grid.hpp"
 #include "nav_msgs/srv/get_map.hpp"
@@ -17,6 +20,8 @@ class GazeboEnvironment : public ROS2Environment {
  private:
   void initEnvironment() override;
   bool collisionCheck(const std::shared_ptr<Actor>& actor) const override;
+
+  rclcpp::Client<gazebo_msgs::srv::SpawnEntity>::SharedPtr m_spawn_client_;
 };
 }  // namespace ReinforcementLearningDrive
 

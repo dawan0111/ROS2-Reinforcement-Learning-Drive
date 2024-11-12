@@ -18,7 +18,7 @@ void ReinforcementLearningDrive::initialize() {
   RCLCPP_INFO(this->get_logger(), "actor_prefix: %s", m_actor_prefix.c_str());
   RCLCPP_INFO(this->get_logger(), "control_frequency: %f", m_control_frequency);
 
-  m_environment = std::make_shared<OccupancyGridEnvironment>(shared_from_this());
+  m_environment = std::make_shared<GazeboEnvironment>(shared_from_this());
   m_reward = std::make_shared<ScanReward>(shared_from_this());
 
   for (int i = 0; i < m_num_actors; i++) {
@@ -32,6 +32,7 @@ void ReinforcementLearningDrive::initialize() {
   /**
    * Configure Environment
    */
+
   m_environment->setReward(m_reward);
 
   // m_cmd_vel_sub = this->create_subscription<geometry_msgs::msg::Twist>(
