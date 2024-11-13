@@ -12,7 +12,6 @@ bool ScanReward::calculateReward(const std::shared_ptr<Actor>& actor) {
     m_score = 0.0;
   }
 
-  // `actor`로부터 scan_data를 가져옴
   const auto& actor_status = actor->getActorStatus();
   const auto& scan_data = actor_status->scan_data;
 
@@ -20,11 +19,9 @@ bool ScanReward::calculateReward(const std::shared_ptr<Actor>& actor) {
     return false;
   }
 
-  // 왼쪽과 오른쪽 스캔 데이터 분리 및 초기화
   double left_sum = 0.0, right_sum = 0.0;
   int left_count = 0, right_count = 0;
 
-  // 각 데이터의 각도에 따라 왼쪽과 오른쪽으로 나눔
   for (const auto& [distance, angle] : scan_data) {
     auto real_distance = std::isinf(distance) ? 10 : distance * 10.0;
     if (angle > 0.01) {
@@ -41,7 +38,7 @@ bool ScanReward::calculateReward(const std::shared_ptr<Actor>& actor) {
 
   double distance_diff = std::abs(left_avg - right_avg);
   double reward = std::exp(-distance_diff);
-  // RCLCPP_INFO(m_node->get_logger(), "Reword: %f", reward);
+
   m_score = reward;
 
   return true;

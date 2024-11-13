@@ -39,7 +39,7 @@ def generate_launch_description():
         name='reinforcement_learning_drive_node',
         parameters=[{
             'use_sim_time': True,
-            'num_actors': 8
+            'num_actors': 1
         }],
     )
 

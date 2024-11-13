@@ -16,7 +16,7 @@ class OccupancyGridEnvironment : public ROS2Environment {
 
  private:
   void initEnvironment() override;
-  bool collisionCheck(const std::shared_ptr<Actor>& actor) const override;
+  bool collisionCheck(const std::shared_ptr<Actor>& actor, const std::shared_ptr<EnvStatus>& status) const override;
 
   double m_max_distance;
   std::vector<double> m_ray_angles;

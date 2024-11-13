@@ -20,7 +20,7 @@ EnvStatus OccupancyGridEnvironment::getStatus(const std::shared_ptr<Actor>& acto
     return status;
   }
 
-  bool collision = collisionCheck(actor);
+  bool collision = collisionCheck(actor, actor->getActorStatus());
 
   if (collision) {
     m_reward->reset();
@@ -62,7 +62,8 @@ void OccupancyGridEnvironment::initEnvironment() {
       });
 }
 
-bool OccupancyGridEnvironment::collisionCheck(const std::shared_ptr<Actor>& actor) const {
+bool OccupancyGridEnvironment::collisionCheck(const std::shared_ptr<Actor>& actor,
+                                              const std::shared_ptr<EnvStatus>& status) const {
   const auto& pose = actor->getCurrentPose()->pose;
   const auto& collision_space = actor->getCollisionArea();
 

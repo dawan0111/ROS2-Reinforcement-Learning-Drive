@@ -17,7 +17,6 @@ class ROS2Environment : public Environment {
 
  private:
   virtual void initEnvironment() = 0;
-  virtual bool collisionCheck(const std::shared_ptr<Actor>& actor) const = 0;
 };
 }  // namespace ReinforcementLearningDrive
 

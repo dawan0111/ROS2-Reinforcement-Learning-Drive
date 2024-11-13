@@ -1,4 +1,6 @@
 #include "reinforcement_learning_drive/environment/gazebo_environment.hpp"
+#include "reinforcement_learning_drive/actor/actor.hpp"
+#include "reinforcement_learning_drive/reward/reward.hpp"
 
 namespace ReinforcementLearningDrive {
 GazeboEnvironment::GazeboEnvironment(const rclcpp::Node::SharedPtr& node) : ROS2Environment(node) {
@@ -28,7 +30,12 @@ void GazeboEnvironment::initParameter() {
 
 void GazeboEnvironment::initEnvironment() {
   initParameter();
+  initGazeboSpawn();
 
+  m_is_initialized = true;
+}
+
+void GazeboEnvironment::initGazeboSpawn() {
   if (!m_spawn_client_->wait_for_service(std::chrono::seconds(5))) {
     RCLCPP_WARN(m_node->get_logger(), "Service not available, waiting...");
     return;
@@ -73,16 +80,29 @@ void GazeboEnvironment::initEnvironment() {
       RCLCPP_INFO(m_node->get_logger(), "Failed spawn enviornment.");
     }
   }
-
-  m_is_initialized = true;
 }
 
 EnvStatus GazeboEnvironment::getStatus(const std::shared_ptr<Actor>& actor) const {
   EnvStatus env_status;
+  const auto actor_status = actor->getActorStatus();
+
+  env_status.collision = collisionCheck(actor, actor_status);
+  env_status.scan_data = actor_status->scan_data;
+
+  RCLCPP_INFO(m_node->get_logger(), "Collision: %s", env_status.collision ? "True" : "False");
   return env_status;
 }
 
-bool GazeboEnvironment::collisionCheck(const std::shared_ptr<Actor>& actor) const {
+bool GazeboEnvironment::collisionCheck(const std::shared_ptr<Actor>& actor,
+                                       const std::shared_ptr<EnvStatus>& status) const {
+  const double threshold_distance = 0.5;
+
+  for (const auto& [distance, angle] : status->scan_data) {
+    if (distance <= threshold_distance) {
+      return true;
+    }
+  }
+
   return false;
 }
 

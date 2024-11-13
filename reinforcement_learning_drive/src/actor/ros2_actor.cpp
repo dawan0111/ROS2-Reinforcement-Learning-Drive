@@ -11,9 +11,10 @@ ROS2Actor::ROS2Actor(const rclcpp::Node::SharedPtr& node, std::string actor_name
 };
 
 void ROS2Actor::initialize() {
-  m_pose_topic_name = m_name + "/odometry";
+  m_pose_topic_name = m_name + "/odom";
   m_control_topic_name = m_name + "/cmd_vel";
   m_pose_service_name = m_name + "/update";
+  m_scan_topic_name = m_name + "/scan";
   m_tf_name = m_name;
 
   m_tf_broadcaster = std::make_shared<tf2_ros::TransformBroadcaster>(m_node);
@@ -30,13 +31,31 @@ void ROS2Actor::initialize() {
 
   if (m_enable_topic) {
     m_control_pub =
-        m_node->create_publisher<geometry_msgs::msg::Twist>(m_name + "/cmd_vel", rclcpp::QoS(10), pub_options);
+        m_node->create_publisher<geometry_msgs::msg::Twist>(m_control_topic_name, rclcpp::QoS(10), pub_options);
     m_pose_sub = m_node->create_subscription<nav_msgs::msg::Odometry>(
         m_pose_topic_name, rclcpp::QoS(10),
         [this](const nav_msgs::msg::Odometry::SharedPtr msg) {
           auto& position = msg->pose.pose.position;
           auto& orientation = msg->pose.pose.orientation;
           m_updatePose(std::move(msg->pose));
+        },
+        sub_options);
+    m_scan_sub = m_node->create_subscription<sensor_msgs::msg::LaserScan>(
+        m_scan_topic_name, rclcpp::QoS(10),
+        [this](const sensor_msgs::msg::LaserScan::SharedPtr msg) {
+          RCLCPP_INFO(m_node->get_logger(), "Run scan callback!!");
+          std::lock_guard<std::mutex> lock(m_status_mtx);
+          m_scan_data.clear();
+          double current_angle = 0.0;
+
+          for (const auto& range : msg->ranges) {
+            if (std::isfinite(range)) {
+              m_scan_data.emplace_back(range, current_angle);
+            }
+            current_angle += msg->angle_increment;
+          }
+
+          m_actor_status->scan_data = m_scan_data;
         },
         sub_options);
   }
@@ -69,7 +88,7 @@ void ROS2Actor::m_tfPublish() {
 
   transform_stamped.header.stamp = m_node->get_clock()->now();
   transform_stamped.header.frame_id = "map";
-  transform_stamped.child_frame_id = m_tf_name;
+  transform_stamped.child_frame_id = m_tf_name + "_virtual";
   transform_stamped.transform.translation.x = pose->pose.position.x;
   transform_stamped.transform.translation.y = pose->pose.position.y;
   transform_stamped.transform.translation.z = pose->pose.position.z + 0.05;
@@ -97,7 +116,7 @@ void ROS2Actor::m_markerVisualize() {
   score_marker.color.r = 1.0;
   score_marker.color.g = 1.0;
   score_marker.color.b = 1.0;
-  score_marker.text = "Score: " + std::to_string(m_actor_status->score);
+  score_marker.text = m_tf_name + " Score: " + std::to_string(m_actor_status->score);
 
   visualization_msgs::msg::Marker scan_marker;
   scan_marker.header.frame_id = m_tf_name;
@@ -109,36 +128,6 @@ void ROS2Actor::m_markerVisualize() {
   scan_marker.scale.x = 0.05;
   scan_marker.color.a = 1.0;
 
-  for (const auto& [distance, angle] : m_actor_status->scan_data) {
-    geometry_msgs::msg::Point start_point;
-    start_point.x = 0.0;
-    start_point.y = 0.0;
-    start_point.z = 0.0;
-
-    geometry_msgs::msg::Point end_point;
-    double actual_distance = std::isinf(distance) ? 10.0 : distance * 10.0;
-    end_point.x = actual_distance * std::cos(angle);
-    end_point.y = actual_distance * std::sin(angle);
-    end_point.z = 0.0;
-
-    if (std::isinf(distance)) {
-      scan_marker.color.r = 0.0;
-      scan_marker.color.g = 0.0;
-      scan_marker.color.b = 1.0;
-
-    } else {
-      scan_marker.color.r = 1.0;
-      scan_marker.color.g = 0.0;
-      scan_marker.color.b = 0.0;
-    }
-
-    scan_marker.points.push_back(start_point);
-    scan_marker.points.push_back(end_point);
-
-    marker_array.markers.push_back(scan_marker);
-    scan_marker.points.clear();
-    ++scan_marker.id;
-  }
   marker_array.markers.push_back(score_marker);
 
   m_marker_pub->publish(marker_array);

@@ -20,7 +20,8 @@ class GazeboEnvironment : public ROS2Environment {
  private:
   void initEnvironment() override;
   void initParameter();
-  bool collisionCheck(const std::shared_ptr<Actor>& actor) const override;
+  void initGazeboSpawn();
+  bool collisionCheck(const std::shared_ptr<Actor>& actor, const std::shared_ptr<EnvStatus>& status) const override;
 
   rclcpp::Client<gazebo_msgs::srv::SpawnEntity>::SharedPtr m_spawn_client_;
 

@@ -30,7 +30,7 @@ class Environment {
 
  private:
   virtual void initEnvironment() = 0;
-  virtual bool collisionCheck(const std::shared_ptr<Actor>& actor) const = 0;
+  virtual bool collisionCheck(const std::shared_ptr<Actor>& actor, const std::shared_ptr<EnvStatus>& status) const = 0;
 };
 }  // namespace ReinforcementLearningDrive
 

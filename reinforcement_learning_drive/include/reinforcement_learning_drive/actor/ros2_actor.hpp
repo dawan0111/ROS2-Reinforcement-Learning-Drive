@@ -10,6 +10,7 @@
 #include <visualization_msgs/msg/marker_array.hpp>
 #include "nav_msgs/msg/odometry.hpp"
 #include "reinforcement_learning_drive/actor/actor.hpp"
+#include "sensor_msgs/msg/laser_scan.hpp"
 
 namespace ReinforcementLearningDrive {
 class ROS2Actor : public Actor {
@@ -37,15 +38,19 @@ class ROS2Actor : public Actor {
   std::string m_control_topic_name;
   std::string m_pose_service_name;
   std::string m_tf_name;
+  std::string m_scan_topic_name;
 
   bool m_enable_topic{true};
 
   rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr m_pose_sub{nullptr};
+  rclcpp::Subscription<sensor_msgs::msg::LaserScan>::SharedPtr m_scan_sub{nullptr};
   rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr m_control_pub{nullptr};
   rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr m_marker_pub;
   rclcpp::Publisher<geometry_msgs::msg::PolygonStamped>::SharedPtr m_polygon_pub;
 
   std::shared_ptr<tf2_ros::TransformBroadcaster> m_tf_broadcaster;
+
+  std::vector<std::pair<double, double>> m_scan_data;
 };
 
 }  // namespace ReinforcementLearningDrive

@@ -2,6 +2,7 @@
 #define __ACTOR_H__
 #include <chrono>
 #include <cmath>
+#include <mutex>
 #include <thread>
 #include "geometry_msgs/msg/pose_with_covariance.hpp"
 #include "geometry_msgs/msg/twist.hpp"
@@ -18,7 +19,10 @@ class Actor : public std::enable_shared_from_this<Actor> {
   Actor(std::string actor_name, double control_frequency = 30.0);
 
   std::shared_ptr<Pose> getCurrentPose() const { return m_pose; };
-  const std::shared_ptr<EnvStatus> getActorStatus() const { return m_actor_status; };
+  const std::shared_ptr<EnvStatus> getActorStatus() {
+    std::lock_guard<std::mutex> lock(m_status_mtx);
+    return std::make_shared<EnvStatus>(*m_actor_status);
+  };
 
   void setEnvironment(std::shared_ptr<Environment> env) { m_env = env; }
   std::shared_ptr<Environment> getEnvironment() const { return m_env; }
@@ -44,6 +48,8 @@ class Actor : public std::enable_shared_from_this<Actor> {
 
   std::string m_name;
   double m_dt{0.033};
+
+  std::mutex m_status_mtx;
 
  private:
   std::shared_ptr<Pose> m_pose;
