@@ -19,9 +19,21 @@ class GazeboEnvironment : public ROS2Environment {
 
  private:
   void initEnvironment() override;
+  void initParameter();
   bool collisionCheck(const std::shared_ptr<Actor>& actor) const override;
 
   rclcpp::Client<gazebo_msgs::srv::SpawnEntity>::SharedPtr m_spawn_client_;
+
+  std::string m_stage_model;
+  std::string m_actor_model;
+  uint16_t m_num_actors;
+  uint16_t m_stage_row;
+
+  double m_stage_x;
+  double m_stage_y;
+
+  double m_initial_x;
+  double m_initial_y;
 };
 }  // namespace ReinforcementLearningDrive
 

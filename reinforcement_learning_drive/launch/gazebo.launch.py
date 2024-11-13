@@ -24,12 +24,14 @@ from launch import LaunchDescription
 from launch_ros.actions import Node
 from launch.actions import IncludeLaunchDescription
 from launch.launch_description_sources import PythonLaunchDescriptionSource
+from launch.substitutions import LaunchConfiguration
 from ament_index_python.packages import get_package_share_directory
 import os
 import yaml
 
 def generate_launch_description():
     ld = LaunchDescription()
+    use_sim_time = LaunchConfiguration('use_sim_time', default='true')
 
     bridge_node = Node(
         package='reinforcement_learning_drive',
@@ -38,7 +40,7 @@ def generate_launch_description():
         parameters=[{
             'use_sim_time': True,
             'num_actors': 8
-        }]
+        }],
     )
 
     static_transform_publisher_node = Node(
@@ -63,6 +65,7 @@ def generate_launch_description():
 
     gazebo_launch = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(gazebo_launch_file),
+        launch_arguments={'use_sim_time': use_sim_time}.items()
     )
 
     # finalize
