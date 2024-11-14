@@ -32,6 +32,9 @@ import yaml
 def generate_launch_description():
     ld = LaunchDescription()
     use_sim_time = LaunchConfiguration('use_sim_time', default='true')
+    world_file = os.path.join(get_package_share_directory('reinforcement_learning_drive'),
+                'world',
+                'empty.world')
 
     bridge_node = Node(
         package='reinforcement_learning_drive',
@@ -60,12 +63,15 @@ def generate_launch_description():
     gazebo_launch_file = os.path.join(
         get_package_share_directory('gazebo_ros'),
         'launch',
-        'gazebo.launch.py'
+        'gazebo.launch.py',
     )
 
     gazebo_launch = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(gazebo_launch_file),
-        launch_arguments={'use_sim_time': use_sim_time}.items()
+        launch_arguments={
+            'use_sim_time': use_sim_time,
+            'world': world_file
+        }.items()
     )
 
     # finalize

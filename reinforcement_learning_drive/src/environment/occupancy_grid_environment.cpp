@@ -10,7 +10,6 @@ OccupancyGridEnvironment::OccupancyGridEnvironment(const rclcpp::Node::SharedPtr
   for (double angle = -M_PI / 2; angle <= M_PI / 2; angle += angle_step) {
     m_ray_angles.push_back(angle);
   }
-  initEnvironment();
 };
 EnvStatus OccupancyGridEnvironment::getStatus(const std::shared_ptr<Actor>& actor) const {
   EnvStatus status{0, {}};
@@ -95,6 +94,20 @@ bool OccupancyGridEnvironment::collisionCheck(const std::shared_ptr<Actor>& acto
     collision_pose.position.y = start_y;
   }
   return false;
+}
+
+bool OccupancyGridEnvironment::resetActor(const std::shared_ptr<Actor>& actor) {
+  geometry_msgs::msg::PoseWithCovariance pose;
+  pose.pose.position.x = 0.0;
+  pose.pose.position.y = 0.0;
+  pose.pose.position.z = 0.0;
+  pose.pose.orientation.w = 1.0;
+  pose.pose.orientation.x = 0.0;
+  pose.pose.orientation.y = 0.0;
+  pose.pose.orientation.z = 0.0;
+
+  actor->updatePose(std::move(pose));
+  return true;
 }
 
 std::pair<int16_t, int16_t> OccupancyGridEnvironment::getCellXY(const geometry_msgs::msg::Pose& pose) const {

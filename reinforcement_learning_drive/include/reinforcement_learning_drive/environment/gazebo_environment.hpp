@@ -4,7 +4,9 @@
 #include <tf2/LinearMath/Matrix3x3.h>
 #include <tf2/LinearMath/Quaternion.h>
 #include <fstream>
+#include <mutex>
 #include <sstream>
+#include "gazebo_msgs/srv/set_entity_state.hpp"
 #include "gazebo_msgs/srv/spawn_entity.hpp"
 #include "geometry_msgs/msg/pose.hpp"
 #include "nav_msgs/msg/occupancy_grid.hpp"
@@ -16,19 +18,23 @@ class GazeboEnvironment : public ROS2Environment {
  public:
   GazeboEnvironment(const rclcpp::Node::SharedPtr&);
   EnvStatus getStatus(const std::shared_ptr<Actor>& actor) const override;
+  bool resetActor(const std::shared_ptr<Actor>& actor) override;
+  void initEnvironment() override;
 
  private:
-  void initEnvironment() override;
   void initParameter();
   void initGazeboSpawn();
   bool collisionCheck(const std::shared_ptr<Actor>& actor, const std::shared_ptr<EnvStatus>& status) const override;
 
   rclcpp::Client<gazebo_msgs::srv::SpawnEntity>::SharedPtr m_spawn_client_;
+  rclcpp::Client<gazebo_msgs::srv::SetEntityState>::SharedPtr m_reset_client_;
 
   std::string m_stage_model;
   std::string m_actor_model;
   uint16_t m_num_actors;
   uint16_t m_stage_row;
+
+  bool m_reset{false};
 
   double m_stage_x;
   double m_stage_y;

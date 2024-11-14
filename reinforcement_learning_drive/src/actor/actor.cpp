@@ -25,15 +25,7 @@ void Actor::debug() {
 }
 
 void Actor::m_reset() {
-  Pose pose;
-  pose.pose.position.x = 0.0;
-  pose.pose.position.y = 0.0;
-  pose.pose.position.z = 0.0;
-  pose.pose.orientation.w = 1.0;
-  pose.pose.orientation.x = 0.0;
-  pose.pose.orientation.y = 0.0;
-  pose.pose.orientation.z = 0.0;
-  m_updatePose(std::move(pose));
+  m_env->resetActor(shared_from_this());
 }
 
 double Actor::quatToYaw() const {

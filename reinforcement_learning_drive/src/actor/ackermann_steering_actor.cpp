@@ -26,6 +26,7 @@ void AckermannSteeringActor::m_reset() {
 
 void AckermannSteeringActor::m_predictPose(const Command& twist, double dt) {
   const auto& pose = getCurrentPose();
+  auto new_pose = *pose;
   double wheelbase = m_wheel_base;
 
   double linear_velocity = twist.linear.x;
@@ -56,9 +57,11 @@ void AckermannSteeringActor::m_predictPose(const Command& twist, double dt) {
     current_yaw += delta_yaw;
   }
 
-  pose->pose.position.x = current_x;
-  pose->pose.position.y = current_y;
-  pose->pose.orientation = yawToQuat(current_yaw);
+  new_pose.pose.position.x = current_x;
+  new_pose.pose.position.y = current_y;
+  new_pose.pose.orientation = yawToQuat(current_yaw);
+
+  updatePose(std::move(new_pose));
 }
 
 }  // namespace ReinforcementLearningDrive

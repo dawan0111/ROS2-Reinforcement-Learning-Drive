@@ -13,9 +13,10 @@ class OccupancyGridEnvironment : public ROS2Environment {
  public:
   OccupancyGridEnvironment(const rclcpp::Node::SharedPtr&);
   EnvStatus getStatus(const std::shared_ptr<Actor>& actor) const override;
+  bool resetActor(const std::shared_ptr<Actor>& actor) override;
+  void initEnvironment() override;
 
  private:
-  void initEnvironment() override;
   bool collisionCheck(const std::shared_ptr<Actor>& actor, const std::shared_ptr<EnvStatus>& status) const override;
 
   double m_max_distance;

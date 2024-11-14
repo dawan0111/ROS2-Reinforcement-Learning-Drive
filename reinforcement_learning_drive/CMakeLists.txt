@@ -75,7 +75,7 @@ reinforcement_learning_drive_node
   DESTINATION lib/${PROJECT_NAME})
 
 install(DIRECTORY
-  launch map rviz
+  launch map rviz world
   DESTINATION share/${PROJECT_NAME}
 )
 

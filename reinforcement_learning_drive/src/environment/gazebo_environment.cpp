@@ -5,7 +5,7 @@
 namespace ReinforcementLearningDrive {
 GazeboEnvironment::GazeboEnvironment(const rclcpp::Node::SharedPtr& node) : ROS2Environment(node) {
   m_spawn_client_ = m_node->create_client<gazebo_msgs::srv::SpawnEntity>("/spawn_entity");
-  initEnvironment();
+  m_reset_client_ = m_node->create_client<gazebo_msgs::srv::SetEntityState>("/actor/set_entity_state");
 }
 
 void GazeboEnvironment::initParameter() {
@@ -68,16 +68,21 @@ void GazeboEnvironment::initGazeboSpawn() {
     }
 
     request->xml = actor_sdf_stream.str();
-    request->name = "actor" + std::to_string(i + 1);
-    request->robot_namespace = "actor" + std::to_string(i + 1);
+    request->name = m_actor_vec[i]->getName();
+    request->robot_namespace = m_actor_vec[i]->getName();
 
     request->initial_pose.position.x = m_stage_x * (i % m_stage_row) + m_initial_x;
     request->initial_pose.position.y = m_stage_y * static_cast<int>(i / m_stage_row) + m_initial_y;
+    request->initial_pose.position.z = 0.05;
 
     auto actor_future = m_spawn_client_->async_send_request(request);
 
-    if (rclcpp::spin_until_future_complete(m_node, actor_future) != rclcpp::FutureReturnCode::SUCCESS) {
-      RCLCPP_INFO(m_node->get_logger(), "Failed spawn enviornment.");
+    if (rclcpp::spin_until_future_complete(m_node, actor_future) == rclcpp::FutureReturnCode::SUCCESS) {
+      geometry_msgs::msg::PoseWithCovariance actor_inital_pose;
+      actor_inital_pose.pose = request->initial_pose;
+      m_actor_vec[i]->updateInitialPose(std::move(actor_inital_pose));
+    } else {
+      RCLCPP_INFO(m_node->get_logger(), "Failed spawn actor.");
     }
   }
 }
@@ -86,7 +91,7 @@ EnvStatus GazeboEnvironment::getStatus(const std::shared_ptr<Actor>& actor) cons
   EnvStatus env_status;
   const auto actor_status = actor->getActorStatus();
 
-  env_status.collision = collisionCheck(actor, actor_status);
+  env_status.collision = collisionCheck(actor, actor_status) && !actor->reset;
   env_status.scan_data = actor_status->scan_data;
 
   RCLCPP_INFO(m_node->get_logger(), "Collision: %s", env_status.collision ? "True" : "False");
@@ -95,15 +100,38 @@ EnvStatus GazeboEnvironment::getStatus(const std::shared_ptr<Actor>& actor) cons
 
 bool GazeboEnvironment::collisionCheck(const std::shared_ptr<Actor>& actor,
                                        const std::shared_ptr<EnvStatus>& status) const {
-  const double threshold_distance = 0.5;
+  const double threshold_distance = 0.15;
 
   for (const auto& [distance, angle] : status->scan_data) {
-    if (distance <= threshold_distance) {
+    if (distance <= threshold_distance && distance > 0.1) {
       return true;
     }
   }
 
   return false;
+}
+
+bool GazeboEnvironment::resetActor(const std::shared_ptr<Actor>& actor) {
+  if (actor->reset) {
+    return false;
+  }
+
+  actor->reset = true;
+
+  auto initial_pose = actor->getInitialPose();
+  auto request = std::make_shared<gazebo_msgs::srv::SetEntityState::Request>();
+
+  request->state.name = actor->getName();
+  request->state.pose = initial_pose.pose;
+  request->state.reference_frame = "world";
+
+  auto future = m_reset_client_->async_send_request(
+      request, [this, actor](rclcpp::Client<gazebo_msgs::srv::SetEntityState>::SharedFuture response) {
+        std::this_thread::sleep_for(std::chrono::duration<double>(1.0));
+        actor->reset = false;
+      });
+
+  return true;
 }
 
 }  // namespace ReinforcementLearningDrive

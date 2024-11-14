@@ -2,6 +2,7 @@
 #define __ACTOR_H__
 #include <chrono>
 #include <cmath>
+#include <future>
 #include <mutex>
 #include <thread>
 #include "geometry_msgs/msg/pose_with_covariance.hpp"
@@ -18,13 +19,18 @@ class Actor : public std::enable_shared_from_this<Actor> {
 
   Actor(std::string actor_name, double control_frequency = 30.0);
 
-  std::shared_ptr<Pose> getCurrentPose() const { return m_pose; };
+  void updatePose(Pose&& pose) { m_pose->pose = pose.pose; };
+  std::shared_ptr<const Pose> getCurrentPose() const { return m_pose; };
   const std::shared_ptr<EnvStatus> getActorStatus() {
     std::lock_guard<std::mutex> lock(m_status_mtx);
     return std::make_shared<EnvStatus>(*m_actor_status);
   };
 
   void setEnvironment(std::shared_ptr<Environment> env) { m_env = env; }
+
+  Pose getInitialPose() const { return m_initial_pose; };
+  void updateInitialPose(Pose&& pose) { m_initial_pose = pose; };
+
   std::shared_ptr<Environment> getEnvironment() const { return m_env; }
 
   std::vector<double> getCollisionArea() { return m_collision_space; };
@@ -37,10 +43,11 @@ class Actor : public std::enable_shared_from_this<Actor> {
 
   geometry_msgs::msg::Quaternion yawToQuat(double yaw) const;
 
+  bool reset{false};
+
  protected:
   virtual void m_reset();
   virtual void m_visualize() = 0;
-  void m_updatePose(Pose&& pose) { m_pose->pose = pose.pose; };
 
   std::shared_ptr<Environment> m_env;
   std::shared_ptr<EnvStatus> m_actor_status;
@@ -50,6 +57,7 @@ class Actor : public std::enable_shared_from_this<Actor> {
   double m_dt{0.033};
 
   std::mutex m_status_mtx;
+  Pose m_initial_pose;
 
  private:
   std::shared_ptr<Pose> m_pose;

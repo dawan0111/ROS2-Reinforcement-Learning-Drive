@@ -37,13 +37,12 @@ void ROS2Actor::initialize() {
         [this](const nav_msgs::msg::Odometry::SharedPtr msg) {
           auto& position = msg->pose.pose.position;
           auto& orientation = msg->pose.pose.orientation;
-          m_updatePose(std::move(msg->pose));
+          updatePose(std::move(msg->pose));
         },
         sub_options);
     m_scan_sub = m_node->create_subscription<sensor_msgs::msg::LaserScan>(
         m_scan_topic_name, rclcpp::QoS(10),
         [this](const sensor_msgs::msg::LaserScan::SharedPtr msg) {
-          RCLCPP_INFO(m_node->get_logger(), "Run scan callback!!");
           std::lock_guard<std::mutex> lock(m_status_mtx);
           m_scan_data.clear();
           double current_angle = 0.0;
