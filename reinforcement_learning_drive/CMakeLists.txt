@@ -30,6 +30,7 @@ add_library(${library_name}
   src/actor/actor.cpp
   src/actor/ros2_actor.cpp
   src/actor/ackermann_steering_actor.cpp
+  src/actor/differential_actor.cpp
   src/environment/occupancy_grid_environment.cpp
   src/environment/gazebo_environment.cpp
   src/reward/path_tracking_reward.cpp
