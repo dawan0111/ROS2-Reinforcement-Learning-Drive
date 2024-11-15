@@ -23,6 +23,10 @@ bool ScanReward::calculateReward(const std::shared_ptr<Actor>& actor) {
   int left_count = 0, right_count = 0;
 
   for (const auto& [distance, angle] : scan_data) {
+    if (angle < -M_PI_2 || angle > M_PI_2) {
+      continue;
+    }
+
     auto real_distance = std::isinf(distance) ? 10 : distance * 10.0;
     if (angle > 0.01) {
       right_sum += real_distance;

@@ -49,7 +49,8 @@ void ROS2Actor::initialize() {
 
           for (const auto& range : msg->ranges) {
             if (std::isfinite(range)) {
-              m_scan_data.emplace_back(range, current_angle);
+              double normalized_angle = std::atan2(std::sin(current_angle), std::cos(current_angle));
+              m_scan_data.emplace_back(range, normalized_angle);
             }
             current_angle += msg->angle_increment;
           }
