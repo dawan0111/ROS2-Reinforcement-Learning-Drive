@@ -4,8 +4,11 @@
 
 namespace ReinforcementLearningDrive {
 GazeboEnvironment::GazeboEnvironment(const rclcpp::Node::SharedPtr& node) : ROS2Environment(node) {
+  rmw_qos_profile_t qos_profile = rmw_qos_profile_services_default;
+  qos_profile.history = RMW_QOS_POLICY_HISTORY_KEEP_ALL;
+
   m_spawn_client_ = m_node->create_client<gazebo_msgs::srv::SpawnEntity>("/spawn_entity");
-  m_reset_client_ = m_node->create_client<gazebo_msgs::srv::SetEntityState>("/actor/set_entity_state");
+  m_reset_client_ = m_node->create_client<gazebo_msgs::srv::SetEntityState>("/actor/set_entity_state", qos_profile);
 }
 
 void GazeboEnvironment::initParameter() {
@@ -94,13 +97,12 @@ EnvStatus GazeboEnvironment::getStatus(const std::shared_ptr<Actor>& actor) cons
   env_status.collision = collisionCheck(actor, actor_status) && !actor->reset;
   env_status.scan_data = actor_status->scan_data;
 
-  RCLCPP_INFO(m_node->get_logger(), "Collision: %s", env_status.collision ? "True" : "False");
   return env_status;
 }
 
 bool GazeboEnvironment::collisionCheck(const std::shared_ptr<Actor>& actor,
                                        const std::shared_ptr<EnvStatus>& status) const {
-  const double threshold_distance = 0.15;
+  const double threshold_distance = 0.25;
 
   for (const auto& [distance, angle] : status->scan_data) {
     if (distance <= threshold_distance && distance > 0.1) {
@@ -115,6 +117,7 @@ bool GazeboEnvironment::resetActor(const std::shared_ptr<Actor>& actor) {
   if (actor->reset) {
     return false;
   }
+  RCLCPP_INFO(m_node->get_logger(), "Reset Call: %s", actor->getName().c_str());
 
   actor->reset = true;
 
@@ -127,7 +130,8 @@ bool GazeboEnvironment::resetActor(const std::shared_ptr<Actor>& actor) {
 
   auto future = m_reset_client_->async_send_request(
       request, [this, actor](rclcpp::Client<gazebo_msgs::srv::SetEntityState>::SharedFuture response) {
-        std::this_thread::sleep_for(std::chrono::duration<double>(1.0));
+        std::this_thread::sleep_for(std::chrono::duration<double>(0.1));
+        RCLCPP_INFO(m_node->get_logger(), "Reset Finish: %s", actor->getName().c_str());
         actor->reset = false;
       });
 
