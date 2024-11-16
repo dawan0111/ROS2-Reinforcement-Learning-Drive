@@ -12,7 +12,7 @@ class Actor;
 class ScanReward : public ROS2Reward {
  public:
   ScanReward(const rclcpp::Node::SharedPtr&);
-  bool calculateReward(const std::shared_ptr<Actor>& actor) override;
+  bool calculateReward(const std::shared_ptr<Actor>& actor, const std::shared_ptr<EnvStatus>& status) override;
   void reset() override;
 };
 

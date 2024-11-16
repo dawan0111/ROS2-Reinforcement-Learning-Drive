@@ -6,14 +6,13 @@ namespace ReinforcementLearningDrive {
 
 ScanReward::ScanReward(const rclcpp::Node::SharedPtr& node) : ROS2Reward(node) {}
 
-bool ScanReward::calculateReward(const std::shared_ptr<Actor>& actor) {
+bool ScanReward::calculateReward(const std::shared_ptr<Actor>& actor, const std::shared_ptr<EnvStatus>& status) {
   if (!m_is_initialized) {
     m_is_initialized = true;
     m_score = 0.0;
   }
 
-  const auto actor_status = actor->getActorStatus();
-  const auto& scan_data = actor_status->scan_data;
+  const auto& scan_data = status->scan_data;
 
   if (scan_data.empty()) {
     return false;

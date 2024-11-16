@@ -8,7 +8,7 @@ class Actor;
 class Reward {
  public:
   Reward() = default;
-  virtual bool calculateReward(const std::shared_ptr<Actor>& actor) = 0;
+  virtual bool calculateReward(const std::shared_ptr<Actor>& actor, const std::shared_ptr<EnvStatus>& status) = 0;
   double getScore() { return m_score; };
 
   /**

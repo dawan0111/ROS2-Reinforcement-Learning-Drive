@@ -11,6 +11,7 @@
 #include <vector>
 #include "geometry_msgs/msg/twist.hpp"
 #include "reinforcement_learning_drive/actor/ackermann_steering_actor.hpp"
+#include "reinforcement_learning_drive/actor/differential_actor.hpp"
 // #include "reinforcement_learning_drive/environment/occupancy_grid_environment.hpp"
 #include "reinforcement_learning_drive/environment/gazebo_environment.hpp"
 #include "reinforcement_learning_drive/reward/path_tracking_reward.hpp"

@@ -20,7 +20,8 @@ void PathTrackingReward::reset() {
   m_current_index = 0;
 }
 
-bool PathTrackingReward::calculateReward(const std::shared_ptr<Actor>& actor) {
+bool PathTrackingReward::calculateReward(const std::shared_ptr<Actor>& actor,
+                                         const std::shared_ptr<EnvStatus>& status) {
   if (m_path.poses.empty()) {
     return false;
   }

@@ -10,7 +10,7 @@ class PathTrackingReward : public ROS2Reward {
  public:
   using Ptr = std::shared_ptr<ROS2Reward>;
   PathTrackingReward(const rclcpp::Node::SharedPtr&, bool loop = true);
-  bool calculateReward(const std::shared_ptr<Actor>& actor) override;
+  bool calculateReward(const std::shared_ptr<Actor>& actor, const std::shared_ptr<EnvStatus>& status) override;
   void reset() override;
 
  private:

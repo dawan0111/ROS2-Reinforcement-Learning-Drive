@@ -27,8 +27,8 @@ void ReinforcementLearningDrive::initialize() {
   m_environment->setReward(m_reward);
 
   for (int i = 0; i < m_num_actors; i++) {
-    auto actor = std::make_shared<AckermannSteeringActor>(shared_from_this(), m_actor_prefix + std::to_string(i + 1),
-                                                          m_control_frequency);
+    auto actor = std::make_shared<DifferentialActor>(shared_from_this(), m_actor_prefix + std::to_string(i + 1),
+                                                     m_control_frequency);
     actor->setEnvironment(m_environment);
     actor->run(m_current_twist);
 
@@ -44,13 +44,11 @@ void ReinforcementLearningDrive::initialize() {
       "cmd_vel", 10, [this](const geometry_msgs::msg::Twist::SharedPtr msg) -> void { m_current_twist = *msg; });
 
   m_timer = this->create_wall_timer(
-      std::chrono::milliseconds(1),
+      std::chrono::milliseconds(33),
       [this]() -> void {
-        auto actors = m_environment->getActorVec();
-        std::for_each(std::execution::par, actors.begin(), actors.end(), [this](std::shared_ptr<Actor>& actor) {
-          actor->run(m_current_twist);
-          actor->debug();
-        });
+        const auto& actors = m_environment->getActorVec();
+        std::for_each(std::execution::par, actors.begin(), actors.end(),
+                      [this](const std::shared_ptr<Actor>& actor) { actor->debug(); });
       },
       client_cb_group_);
 

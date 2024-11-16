@@ -99,7 +99,7 @@ EnvStatus GazeboEnvironment::getStatus(const std::shared_ptr<Actor>& actor) cons
   if (collision) {
     m_reward->reset();
   } else {
-    m_reward->calculateReward(actor);
+    m_reward->calculateReward(actor, actor_status);
   }
 
   env_status.score = m_reward->getScore();
@@ -117,7 +117,8 @@ bool GazeboEnvironment::collisionCheck(const std::shared_ptr<Actor>& actor,
   const double threshold_distance = 0.175;
 
   for (const auto& [distance, angle] : status->scan_data) {
-    if (distance <= threshold_distance && distance > 0.01) {
+    auto real_distance = distance * 10.0;
+    if (real_distance <= threshold_distance && real_distance > 0.01) {
       return true;
     }
   }

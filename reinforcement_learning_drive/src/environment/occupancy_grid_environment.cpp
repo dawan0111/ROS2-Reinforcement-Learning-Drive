@@ -18,13 +18,14 @@ EnvStatus OccupancyGridEnvironment::getStatus(const std::shared_ptr<Actor>& acto
     RCLCPP_WARN(m_node->get_logger(), "map data is empty!");
     return status;
   }
+  auto actor_status = actor->getActorStatus();
 
-  bool collision = collisionCheck(actor, actor->getActorStatus());
+  bool collision = collisionCheck(actor, actor_status);
 
   if (collision) {
     m_reward->reset();
   } else {
-    m_reward->calculateReward(actor);
+    m_reward->calculateReward(actor, actor_status);
   }
 
   status.score = m_reward->getScore();

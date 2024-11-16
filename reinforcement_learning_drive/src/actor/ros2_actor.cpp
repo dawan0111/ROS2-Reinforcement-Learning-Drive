@@ -26,8 +26,8 @@ void ROS2Actor::initialize() {
   sub_options.callback_group = m_actor_cb_group;
   pub_options.callback_group = m_actor_cb_group;
 
-  m_marker_pub = m_node->create_publisher<visualization_msgs::msg::MarkerArray>(m_name + "/visual", 10, pub_options);
-  m_polygon_pub = m_node->create_publisher<geometry_msgs::msg::PolygonStamped>(m_name + "/collision", 10, pub_options);
+  m_marker_pub = m_node->create_publisher<visualization_msgs::msg::MarkerArray>(m_name + "/visual", 1, pub_options);
+  m_polygon_pub = m_node->create_publisher<geometry_msgs::msg::PolygonStamped>(m_name + "/collision", 1, pub_options);
 
   if (m_enable_topic) {
     m_control_pub =
@@ -43,19 +43,20 @@ void ROS2Actor::initialize() {
     m_scan_sub = m_node->create_subscription<sensor_msgs::msg::LaserScan>(
         m_scan_topic_name, rclcpp::QoS(10),
         [this](const sensor_msgs::msg::LaserScan::SharedPtr msg) {
-          std::lock_guard<std::mutex> lock(m_status_mtx);
-          m_scan_data.clear();
+          std::unique_lock<std::mutex> lock(m_status_mtx, std::defer_lock);
+          std::vector<std::pair<double, double>> scan_data;
           double current_angle = 0.0;
 
           for (const auto& range : msg->ranges) {
+            double normalized_angle = std::atan2(std::sin(current_angle), std::cos(current_angle));
             if (std::isfinite(range)) {
-              double normalized_angle = std::atan2(std::sin(current_angle), std::cos(current_angle));
-              m_scan_data.emplace_back(range, normalized_angle);
+              scan_data.emplace_back(std::isfinite(range) ? range / 10.0 : 1.0, normalized_angle);
             }
             current_angle += msg->angle_increment;
           }
 
-          m_actor_status->scan_data = m_scan_data;
+          lock.lock();
+          m_actor_status->scan_data = scan_data;
         },
         sub_options);
   }
@@ -99,8 +100,11 @@ void ROS2Actor::m_tfPublish() {
 }
 
 void ROS2Actor::m_markerVisualize() {
-  visualization_msgs::msg::MarkerArray marker_array;
+  std::unique_lock<std::mutex> lock(m_status_mtx);
+  auto score = m_actor_status->score;
+  lock.unlock();
 
+  visualization_msgs::msg::MarkerArray marker_array;
   visualization_msgs::msg::Marker score_marker;
   score_marker.header.frame_id = m_tf_name;
   score_marker.header.stamp = m_node->get_clock()->now();
@@ -116,7 +120,7 @@ void ROS2Actor::m_markerVisualize() {
   score_marker.color.r = 1.0;
   score_marker.color.g = 1.0;
   score_marker.color.b = 1.0;
-  score_marker.text = m_tf_name + " Score: " + std::to_string(m_actor_status->score);
+  score_marker.text = m_tf_name + " Score: " + std::to_string(score);
 
   visualization_msgs::msg::Marker scan_marker;
   scan_marker.header.frame_id = m_tf_name;
