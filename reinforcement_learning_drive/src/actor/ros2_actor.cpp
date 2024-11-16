@@ -15,7 +15,7 @@ void ROS2Actor::initialize() {
   m_control_topic_name = m_name + "/cmd_vel";
   m_pose_service_name = m_name + "/update";
   m_scan_topic_name = m_name + "/scan";
-  m_tf_name = m_name;
+  m_tf_name = m_name + "_virtual";
 
   m_tf_broadcaster = std::make_shared<tf2_ros::TransformBroadcaster>(m_node);
   m_actor_cb_group = m_node->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
@@ -88,7 +88,7 @@ void ROS2Actor::m_tfPublish() {
 
   transform_stamped.header.stamp = m_node->get_clock()->now();
   transform_stamped.header.frame_id = "map";
-  transform_stamped.child_frame_id = m_tf_name + "_virtual";
+  transform_stamped.child_frame_id = m_tf_name;
   transform_stamped.transform.translation.x = pose->pose.position.x;
   transform_stamped.transform.translation.y = pose->pose.position.y;
   transform_stamped.transform.translation.z = pose->pose.position.z + 0.05;

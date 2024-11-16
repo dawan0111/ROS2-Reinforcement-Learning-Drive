@@ -94,18 +94,30 @@ EnvStatus GazeboEnvironment::getStatus(const std::shared_ptr<Actor>& actor) cons
   EnvStatus env_status;
   const auto actor_status = actor->getActorStatus();
 
-  env_status.collision = collisionCheck(actor, actor_status) && !actor->reset;
+  bool collision = collisionCheck(actor, actor_status);
+
+  if (collision) {
+    m_reward->reset();
+  } else {
+    m_reward->calculateReward(actor);
+  }
+
+  env_status.score = m_reward->getScore();
+  env_status.goal_angle = m_reward->getDistanceToAngle();
+  env_status.goal_distance = m_reward->getDistanceToGoal();
   env_status.scan_data = actor_status->scan_data;
+  env_status.collision = collision && !actor->reset;
+  env_status.pose = *(actor->getCurrentPose());
 
   return env_status;
 }
 
 bool GazeboEnvironment::collisionCheck(const std::shared_ptr<Actor>& actor,
                                        const std::shared_ptr<EnvStatus>& status) const {
-  const double threshold_distance = 0.25;
+  const double threshold_distance = 0.175;
 
   for (const auto& [distance, angle] : status->scan_data) {
-    if (distance <= threshold_distance && distance > 0.1) {
+    if (distance <= threshold_distance && distance > 0.01) {
       return true;
     }
   }
@@ -117,7 +129,6 @@ bool GazeboEnvironment::resetActor(const std::shared_ptr<Actor>& actor) {
   if (actor->reset) {
     return false;
   }
-  RCLCPP_INFO(m_node->get_logger(), "Reset Call: %s", actor->getName().c_str());
 
   actor->reset = true;
 
@@ -131,7 +142,6 @@ bool GazeboEnvironment::resetActor(const std::shared_ptr<Actor>& actor) {
   auto future = m_reset_client_->async_send_request(
       request, [this, actor](rclcpp::Client<gazebo_msgs::srv::SetEntityState>::SharedFuture response) {
         std::this_thread::sleep_for(std::chrono::duration<double>(0.1));
-        RCLCPP_INFO(m_node->get_logger(), "Reset Finish: %s", actor->getName().c_str());
         actor->reset = false;
       });
 

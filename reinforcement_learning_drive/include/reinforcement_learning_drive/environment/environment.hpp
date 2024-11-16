@@ -28,7 +28,7 @@ class Environment {
   std::shared_ptr<Reward> getReward() const { return m_reward; }
 
   void addActor(std::shared_ptr<Actor>&& actor) { m_actor_vec.push_back(actor); }
-  const std::vector<std::shared_ptr<Actor>> getActorVec() const { return m_actor_vec; };
+  const std::vector<std::shared_ptr<Actor>>& getActorVec() const { return m_actor_vec; };
 
  protected:
   bool m_is_initialized{false};

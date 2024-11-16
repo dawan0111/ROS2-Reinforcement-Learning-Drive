@@ -12,7 +12,7 @@ bool ScanReward::calculateReward(const std::shared_ptr<Actor>& actor) {
     m_score = 0.0;
   }
 
-  const auto& actor_status = actor->getActorStatus();
+  const auto actor_status = actor->getActorStatus();
   const auto& scan_data = actor_status->scan_data;
 
   if (scan_data.empty()) {

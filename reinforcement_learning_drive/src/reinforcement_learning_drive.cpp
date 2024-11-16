@@ -21,6 +21,11 @@ void ReinforcementLearningDrive::initialize() {
   m_environment = std::make_shared<GazeboEnvironment>(shared_from_this());
   m_reward = std::make_shared<ScanReward>(shared_from_this());
 
+  /**
+   * Configure Environment
+   */
+  m_environment->setReward(m_reward);
+
   for (int i = 0; i < m_num_actors; i++) {
     auto actor = std::make_shared<AckermannSteeringActor>(shared_from_this(), m_actor_prefix + std::to_string(i + 1),
                                                           m_control_frequency);
@@ -30,11 +35,7 @@ void ReinforcementLearningDrive::initialize() {
     m_environment->addActor(std::move(actor));
   }
 
-  /**
-   * Configure Environment
-   */
   m_environment->initEnvironment();
-  m_environment->setReward(m_reward);
 
   client_cb_group_ = this->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
   timer_cb_group_ = nullptr;
