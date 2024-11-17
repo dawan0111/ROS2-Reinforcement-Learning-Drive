@@ -33,8 +33,9 @@ class Actor : public std::enable_shared_from_this<Actor> {
 
   std::shared_ptr<Environment> getEnvironment() const { return m_env; }
 
-  std::vector<double> getCollisionArea() { return m_collision_space; };
+  std::vector<double> getCollisionArea() { return m_collision_space; }
   std::string getName() { return m_name; }
+  double getMaxScanDistance() { return m_max_scan_distance; }
 
   void debug();
   virtual void run(const Command& twist);
@@ -58,6 +59,7 @@ class Actor : public std::enable_shared_from_this<Actor> {
 
   std::mutex m_status_mtx;
   Pose m_initial_pose;
+  double m_max_scan_distance{10.0};
 
  private:
   std::shared_ptr<Pose> m_pose;

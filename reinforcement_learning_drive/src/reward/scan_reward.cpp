@@ -13,6 +13,7 @@ bool ScanReward::calculateReward(const std::shared_ptr<Actor>& actor, const std:
   }
 
   const auto& scan_data = status->scan_data;
+  double max_scan_distance = actor->getMaxScanDistance();
 
   if (scan_data.empty()) {
     return false;
@@ -26,11 +27,11 @@ bool ScanReward::calculateReward(const std::shared_ptr<Actor>& actor, const std:
       continue;
     }
 
-    auto real_distance = std::isinf(distance) ? 10 : distance * 10.0;
-    if (angle > 0.01) {
+    auto real_distance = std::isinf(distance) ? max_scan_distance : distance * max_scan_distance;
+    if (angle > 0.5) {
       right_sum += real_distance;
       right_count++;
-    } else if (angle < 0.01) {
+    } else if (angle < -0.5) {
       left_sum += real_distance;
       left_count++;
     }

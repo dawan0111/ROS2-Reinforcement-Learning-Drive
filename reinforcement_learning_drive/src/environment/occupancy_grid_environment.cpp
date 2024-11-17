@@ -5,7 +5,6 @@
 namespace ReinforcementLearningDrive {
 OccupancyGridEnvironment::OccupancyGridEnvironment(const rclcpp::Node::SharedPtr& node) : ROS2Environment(node) {
   m_map_service_name = "/map";
-  m_max_distance = 10.0;
   double angle_step = M_PI / 18.0;
   for (double angle = -M_PI / 2; angle <= M_PI / 2; angle += angle_step) {
     m_ray_angles.push_back(angle);
@@ -43,9 +42,10 @@ std::vector<std::pair<double, double>> OccupancyGridEnvironment::getScanData(
   std::vector<std::pair<double, double>> scan_data;
   auto [x, y] = getCellXY(actor->getCurrentPose()->pose);
   double yaw = actor->quatToYaw();
+  double max_scan_distance = actor->getMaxScanDistance();
 
   for (const auto& ray_angle : m_ray_angles) {
-    scan_data.push_back(getRayCast(x, y, yaw, m_max_distance, ray_angle));
+    scan_data.push_back(getRayCast(x, y, yaw, max_scan_distance, ray_angle));
   }
 
   return scan_data;

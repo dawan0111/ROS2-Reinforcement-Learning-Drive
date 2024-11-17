@@ -49,6 +49,7 @@ class ROS2Actor : public Actor {
   rclcpp::Publisher<geometry_msgs::msg::PolygonStamped>::SharedPtr m_polygon_pub;
 
   std::shared_ptr<tf2_ros::TransformBroadcaster> m_tf_broadcaster;
+  std::vector<std::pair<double, double>> m_scan_data;
 };
 
 }  // namespace ReinforcementLearningDrive

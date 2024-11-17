@@ -11,6 +11,7 @@ ROS2Actor::ROS2Actor(const rclcpp::Node::SharedPtr& node, std::string actor_name
 };
 
 void ROS2Actor::initialize() {
+
   m_pose_topic_name = m_name + "/odom";
   m_control_topic_name = m_name + "/cmd_vel";
   m_pose_service_name = m_name + "/update";
@@ -31,7 +32,7 @@ void ROS2Actor::initialize() {
 
   if (m_enable_topic) {
     m_control_pub =
-        m_node->create_publisher<geometry_msgs::msg::Twist>(m_control_topic_name, rclcpp::QoS(10), pub_options);
+        m_node->create_publisher<geometry_msgs::msg::Twist>(m_control_topic_name, rclcpp::QoS(1), pub_options);
     m_pose_sub = m_node->create_subscription<nav_msgs::msg::Odometry>(
         m_pose_topic_name, rclcpp::QoS(10),
         [this](const nav_msgs::msg::Odometry::SharedPtr msg) {
@@ -46,15 +47,13 @@ void ROS2Actor::initialize() {
           std::unique_lock<std::mutex> lock(m_status_mtx, std::defer_lock);
           std::vector<std::pair<double, double>> scan_data;
           double current_angle = 0.0;
+          m_max_scan_distance = msg->range_max;
 
           for (const auto& range : msg->ranges) {
             double normalized_angle = std::atan2(std::sin(current_angle), std::cos(current_angle));
-            if (std::isfinite(range)) {
-              scan_data.emplace_back(std::isfinite(range) ? range / 10.0 : 1.0, normalized_angle);
-            }
+            scan_data.emplace_back(std::isfinite(range) ? range / m_max_scan_distance : 1.0, normalized_angle);
             current_angle += msg->angle_increment;
           }
-
           lock.lock();
           m_actor_status->scan_data = scan_data;
         },
@@ -64,7 +63,14 @@ void ROS2Actor::initialize() {
 
 void ROS2Actor::m_reset() {
   if (m_enable_topic) {
+    RCLCPP_INFO(m_node->get_logger(), "RESET!!");
     Command twist;
+    twist.linear.x = 0.0;
+    twist.linear.y = 0.0;
+    twist.linear.z = 0.0;
+    twist.angular.x = 0.0;
+    twist.angular.y = 0.0;
+    twist.angular.z = 0.0;
     m_control_pub->publish(twist);
   }
   Actor::m_reset();

@@ -7,7 +7,7 @@ ReinforcementLearningDrive::ReinforcementLearningDrive(const rclcpp::NodeOptions
 void ReinforcementLearningDrive::initialize() {
   this->declare_parameter<std::string>("actor_prefix", "actor");
   this->declare_parameter<uint16_t>("num_actors", 1);
-  this->declare_parameter<double>("control_frequency", 30);
+  this->declare_parameter<double>("control_frequency", 33);
 
   this->get_parameter("actor_prefix", m_actor_prefix);
   this->get_parameter("num_actors", m_num_actors);
@@ -40,15 +40,17 @@ void ReinforcementLearningDrive::initialize() {
   client_cb_group_ = this->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
   timer_cb_group_ = nullptr;
 
-  m_cmd_vel_sub = this->create_subscription<geometry_msgs::msg::Twist>(
-      "cmd_vel", 10, [this](const geometry_msgs::msg::Twist::SharedPtr msg) -> void { m_current_twist = *msg; });
+  // m_cmd_vel_sub = this->create_subscription<geometry_msgs::msg::Twist>(
+  //     "cmd_vel", 10, [this](const geometry_msgs::msg::Twist::SharedPtr msg) -> void { m_current_twist = *msg; });
 
   m_timer = this->create_wall_timer(
       std::chrono::milliseconds(33),
       [this]() -> void {
-        const auto& actors = m_environment->getActorVec();
-        std::for_each(std::execution::par, actors.begin(), actors.end(),
-                      [this](const std::shared_ptr<Actor>& actor) { actor->debug(); });
+        auto actors = m_environment->getActorVec();
+        std::for_each(std::execution::par, actors.begin(), actors.end(), [this](std::shared_ptr<Actor>& actor) {
+          // actor->run(m_current_twist);
+          actor->debug();
+        });
       },
       client_cb_group_);
 

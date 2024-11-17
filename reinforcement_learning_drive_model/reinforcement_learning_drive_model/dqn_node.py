@@ -21,10 +21,10 @@ def get_yaw_from_pose(pose):
     return yaw
 
 # Hyperparameters
-learning_rate = 0.005
+learning_rate = 0.01
 gamma = 0.98
 buffer_limit = 50000
-batch_size = 32
+batch_size = 128
 
 class ReplayBuffer():
     def __init__(self):
@@ -91,6 +91,17 @@ def train(q, q_target, memory, optimizer):
         loss.backward()
         optimizer.step()
 
+def load_model(n_epi, input_size):
+    model_path = os.path.join(os.path.expanduser('~'), f"models/gazebo_model_episode_{n_epi}.pt")
+    
+    # 모델 인스턴스 생성
+    q = Qnet(input_size=input_size)
+    
+    # 모델 파라미터 로드
+    q.load_state_dict(torch.load(model_path, weights_only=True))
+    # q.eval()
+    
+    return q
 
 class DriveServiceClient:
     def __init__(self):
@@ -130,17 +141,9 @@ async def run(args, loop):
 
     client = DriveServiceClient()
     spin_task = loop.create_task(spinning(client.node))
-
-    input_size = 18
-    q = Qnet(input_size=input_size)
-    q_target = Qnet(input_size=input_size)
-    q_target.load_state_dict(q.state_dict())
-    memory = ReplayBuffer()
-
-    optimizer = optim.Adam(q.parameters(), lr=learning_rate)
     score = 0.0
     print_interval = 20
-    actor_lens = 8
+    actor_lens = 9
 
     velocity_commands = []
     for _ in range(actor_lens):
@@ -149,8 +152,19 @@ async def run(args, loop):
     input_states = [list(state.scan_data) for state in results.state]
     names = [state.name for state in results.state]
 
-    for n_epi in range(2000):
-        epsilon = max(0.1, 0.8 - 0.05 * (n_epi / 10))
+    input_size = len(input_states[0])
+    print(f"input_size: {input_size}")
+    q = load_model(100, input_size)
+    q_target = load_model(100, input_size)
+    q_target.load_state_dict(q.state_dict())
+    memory = ReplayBuffer()
+
+    optimizer = optim.Adam(q.parameters(), lr=learning_rate)
+    mode = "TRAIN"
+    epsilon = 0.0
+    for n_epi in range(500):
+        if mode == "TRAIN":
+            epsilon = max(0.1, 0.23 - 0.002 * (n_epi / 10))
         done = False
         done_dict = dict()
 
@@ -161,8 +175,8 @@ async def run(args, loop):
                 state_tensor = torch.tensor(input_state, dtype=torch.float)
                 action_values = q.sample_action(state_tensor, epsilon)
 
-                linear_velocity = 1.5
-                angular_velocity = (-0.5 + (action_values * 0.1)) * 2
+                linear_velocity = 0.5
+                angular_velocity = (-0.5 + (action_values * 0.1)) * 1.25
 
                 if names[i] in done_dict:
                     linear_velocity = 0.0
@@ -191,15 +205,19 @@ async def run(args, loop):
             input_states = state_prime
 
             if len(done_dict) == actor_lens:
+                print(f"Done!!")
                 break
-    
+
         velocity_commands = []
         for _ in range(actor_lens):
             velocity_commands.append([0.0, 0.0])
         results = await loop.create_task(client.send_goal(velocity_commands))
         input_states = [list(state.scan_data) for state in results.state]
 
+        time.sleep(2)
+
         if memory.size() > 500:
+            print("Train!!")
             train(q, q_target, memory, optimizer)
         
         if n_epi % print_interval == 0 and n_epi != 0:
@@ -208,8 +226,10 @@ async def run(args, loop):
                 f"n_episode: {n_epi}, score: {score / print_interval:.1f}, n_buffer: {memory.size()}, eps: {epsilon * 100:.1f}%"
             )
             score = 0.0
-            model_path = os.path.join(os.path.expanduser('~'), f"models/model_episode_{n_epi}.pt")
+            model_path = os.path.join(os.path.expanduser('~'), f"models/gazebo_model_episode_{n_epi}.pt")
+            model_path2 = os.path.join(os.path.expanduser('~'), f"models/gazebo_model_episode_{n_epi}_target.pt")
             torch.save(q.state_dict(), model_path)
+            torch.save(q_target.state_dict(), model_path2)
 
     spin_task.cancel()
     try:

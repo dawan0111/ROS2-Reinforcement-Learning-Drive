@@ -19,7 +19,7 @@ void GazeboEnvironment::initParameter() {
   m_node->declare_parameter<double>("stage_y", 6.0);
   m_node->declare_parameter<double>("initial_x", 0.0);
   m_node->declare_parameter<double>("initial_y", 0.75);
-  m_node->declare_parameter<uint16_t>("stage_row", 4);
+  m_node->declare_parameter<uint16_t>("stage_row", 3);
 
   m_node->get_parameter("stage_model", m_stage_model);
   m_node->get_parameter("actor_model", m_actor_model);
@@ -117,7 +117,7 @@ bool GazeboEnvironment::collisionCheck(const std::shared_ptr<Actor>& actor,
   const double threshold_distance = 0.175;
 
   for (const auto& [distance, angle] : status->scan_data) {
-    auto real_distance = distance * 10.0;
+    auto real_distance = distance * actor->getMaxScanDistance();
     if (real_distance <= threshold_distance && real_distance > 0.01) {
       return true;
     }
