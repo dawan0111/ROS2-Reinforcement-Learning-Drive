@@ -9,7 +9,7 @@ Actor::Actor(std::string actor_name, double control_frequency) {
 }
 
 void Actor::run(const Command& twist) {
-  // m_predictPose(twist, m_dt);
+  m_predictPose(twist, m_dt);
   std::this_thread::sleep_for(std::chrono::duration<double>(m_dt));
 
   auto actor_status = m_env->getStatus(shared_from_this());

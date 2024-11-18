@@ -5,7 +5,11 @@ This repository provides a customizable ROS2 environment for training multiple 2
 
 # Occupancy Map launch
 ```
-ros2 launch reinforcement_learing_drive occupancy.launch.py
+ros2 launch reinforcement_learning_drive occupancy.launch.py
+```
+# Gazebo Map launch
+```
+ros2 launch reinforcement_learning_drive gazebo.launch.py
 ```
 
 # DQN model run
